@@ -57,3 +57,5 @@ data/
 .idea/
 .supervisor.lock
 .env
+database/
+*.db
