@@ -1,0 +1,20 @@
+[Unit]
+Description=Civil Registry Enterprise Data Platform (FastAPI & Vite React)
+After=network.target network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+# User and paths are automatically configured by running ./install_autostart.sh
+# User=username
+# WorkingDirectory=/path/to/Data_Dashboard
+# ExecStart=/path/to/Data_Dashboard/supervisor.sh
+# ExecStop=/path/to/Data_Dashboard/stop.sh
+Restart=always
+RestartSec=5s
+Environment=PATH=.venv/bin:/usr/local/bin:/usr/bin:/bin
+StandardOutput=append:supervisor.log
+StandardError=append:supervisor.log
+
+[Install]
+WantedBy=multi-user.target

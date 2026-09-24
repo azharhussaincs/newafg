@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+# Auto-configured by ./install_autostart.sh
+Exec=supervisor.sh
+Hidden=false
+NoDisplay=false
+X-GNOME-Autostart-enabled=true
+Name=Civil Registry Dashboard
+Comment=Enterprise Civil Registry Platform Supervisor
+Icon=applications-system
