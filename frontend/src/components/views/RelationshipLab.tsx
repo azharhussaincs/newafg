@@ -247,7 +247,7 @@ export const RelationshipLab: React.FC<RelationshipLabProps> = ({ initialRecordI
       {treeLoading && (
         <div className="p-12 flex flex-col items-center justify-center min-h-[300px] bg-white dark:bg-slate-900/40 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
           <div className="w-10 h-10 border-4 border-brand-500 border-t-transparent rounded-full animate-spin"></div>
-          <p className="mt-4 text-xs font-mono text-slate-500 dark:text-slate-400">Reconstructing genealogical family tree across 24 Million records...</p>
+          <p className="mt-4 text-xs font-mono text-slate-500 dark:text-slate-400">Reconstructing genealogical family tree across 31.1 Million records...</p>
         </div>
       )}
 

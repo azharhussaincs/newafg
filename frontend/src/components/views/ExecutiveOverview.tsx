@@ -87,7 +87,7 @@ export const ExecutiveOverview: React.FC<{ onNavigate: (view: string) => void }>
     return (
       <div className="p-8 flex flex-col items-center justify-center min-h-[500px]">
         <div className="w-10 h-10 border-4 border-brand-500 border-t-transparent rounded-full animate-spin"></div>
-        <p className="mt-4 text-xs font-mono text-slate-400">Aggregating 24,399,446 registry records...</p>
+        <p className="mt-4 text-xs font-mono text-slate-400">Aggregating 31,164,973 registry records...</p>
       </div>
     );
   }

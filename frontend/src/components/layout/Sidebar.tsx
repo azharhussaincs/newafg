@@ -144,7 +144,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <span className="text-[10px] font-mono text-slate-500 dark:text-slate-400">Synced</span>
           </div>
           <div className="flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400 font-mono">
-            <span>24,399,444 Rows</span>
+            <span>31,164,973 Rows</span>
             <span>Zero Loss</span>
           </div>
         </div>

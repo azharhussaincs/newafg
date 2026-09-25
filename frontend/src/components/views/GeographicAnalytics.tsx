@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import ReactECharts from 'echarts-for-react';
 import {
   Globe,
@@ -12,7 +12,11 @@ import {
   MapPin,
   ExternalLink,
   X,
-  Compass
+  Compass,
+  Building2,
+  ChevronDown,
+  ChevronUp,
+  Star
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { useFilters } from '../../context/FilterContext';
@@ -42,6 +46,44 @@ export const GeographicAnalytics: React.FC = () => {
   // Matrix Filter Controls
   const [selectedProvinceDossier, setSelectedProvinceDossier] = useState<ProvinceGISData | null>(null);
 
+  // Analytics Presentation Controls
+  const [displayMode, setDisplayMode] = useState<DisplayMode>('bilingual');
+  const [topCount, setTopCount] = useState<number>(30);
+  const [viewMode, setViewMode] = useState<'treemap' | 'list'>('treemap');
+
+  // District breakdown hover/click state for dossier modal
+  const [showDistrictsList, setShowDistrictsList] = useState<boolean>(false);
+  const [districtsHovered, setDistrictsHovered] = useState<boolean>(false);
+  const isDistrictsVisible = showDistrictsList || districtsHovered;
+  const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleDistrictsMouseEnter = () => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+    setDistrictsHovered(true);
+  };
+
+  const handleDistrictsMouseLeave = () => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+    }
+    hoverTimeoutRef.current = setTimeout(() => {
+      setDistrictsHovered(false);
+    }, 280);
+  };
+
+  const handleCloseDossier = () => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+    setSelectedProvinceDossier(null);
+    setShowDistrictsList(false);
+    setDistrictsHovered(false);
+  };
+
   const selectedProvinceStat = useMemo(() => {
     if (!selectedProvinceDossier || !data?.provinces) return null;
     return data.provinces.find(p =>
@@ -52,10 +94,68 @@ export const GeographicAnalytics: React.FC = () => {
     );
   }, [selectedProvinceDossier, data]);
 
-  // Analytics Presentation Controls
-  const [displayMode, setDisplayMode] = useState<DisplayMode>('bilingual');
-  const [topCount, setTopCount] = useState<number>(30);
-  const [viewMode, setViewMode] = useState<'treemap' | 'list'>('treemap');
+  // Districts with populations for the selected province (with Capital prominently highlighted)
+  const selectedProvinceDistricts = useMemo(() => {
+    if (!selectedProvinceDossier || !data?.districts) return [];
+    const provDari = selectedProvinceDossier.nameDari;
+    const provEn = selectedProvinceDossier.name.toLowerCase();
+    const rawCapital = selectedProvinceDossier.capital.replace(/★/g, '').trim();
+    const cleanCap = rawCapital.toLowerCase();
+
+    const matched = data.districts.filter(d => {
+      const p = (d.province || '').trim();
+      return (
+        p === provDari ||
+        p.toLowerCase() === provEn ||
+        getEnglishProvinceName(p).toLowerCase() === provEn ||
+        (selectedProvinceDossier.id === 'DAY' && (p === 'دایکوندی' || p === 'دایکندی')) ||
+        (selectedProvinceDossier.id === 'URZ' && (p === 'ارزگان' || p === 'اروزگان'))
+      );
+    });
+
+    const provTotal = matched.reduce((acc, d) => acc + d.count, 0);
+
+    // Map each district with Capital identification
+    const mapped = matched.map((d) => {
+      const formatted = formatDistrictDisplay(d.district, d.province, displayMode);
+      let en = formatDistrictDisplay(d.district, d.province, 'english').primary;
+      const native = getCleanNativeName(d.district, d.province);
+      const pct = provTotal > 0 ? ((d.count / provTotal) * 100).toFixed(1) : '0';
+
+      const isCapital = Boolean(
+        d.district_code === '01' ||
+        (d.district && d.district.includes('مرکز')) ||
+        (en && en.toLowerCase().includes('center')) ||
+        (cleanCap && en && en.toLowerCase().includes(cleanCap))
+      );
+
+      if (isCapital) {
+        en = `${rawCapital} (Center)`;
+      }
+
+      return {
+        ...d,
+        isCapital,
+        capitalName: rawCapital,
+        primaryName: isCapital ? `${rawCapital} (Center)` : formatted.primary,
+        secondaryName: formatted.secondary,
+        enName: en,
+        nativeName: native,
+        formattedCount: d.count.toLocaleString(),
+        provincePct: pct
+      };
+    });
+
+    // Sort: Capital district at the top, then remaining districts descending by population
+    return mapped.sort((a, b) => {
+      if (a.isCapital && !b.isCapital) return -1;
+      if (!a.isCapital && b.isCapital) return 1;
+      return b.count - a.count;
+    }).map((d, idx) => ({
+      ...d,
+      rank: idx + 1
+    }));
+  }, [selectedProvinceDossier, data?.districts, displayMode]);
 
   // Auto-select province dossier when filters.province is set
   useEffect(() => {
@@ -363,7 +463,11 @@ export const GeographicAnalytics: React.FC = () => {
               provincesCountData={data?.provinces}
               totalRecords={totalRegistryRecords}
               selectedProvinceId={selectedProvinceDossier?.id}
-              onSelectProvince={(prov) => setSelectedProvinceDossier(prov)}
+              onSelectProvince={(prov) => {
+                setSelectedProvinceDossier(prov);
+                setShowDistrictsList(false);
+                setDistrictsHovered(false);
+              }}
             />
 
           </div>
@@ -599,12 +703,12 @@ export const GeographicAnalytics: React.FC = () => {
       {/* Provincial Dossier Modal */}
       {selectedProvinceDossier && (
         <div
-          onClick={() => setSelectedProvinceDossier(null)}
+          onClick={handleCloseDossier}
           className="fixed inset-0 z-50 bg-slate-900/60 dark:bg-black/80 backdrop-blur-md flex items-center justify-center p-4 cursor-pointer"
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="glass-card max-w-xl w-full rounded-2xl border border-slate-200 dark:border-white/15 p-6 space-y-4 shadow-2xl bg-white dark:bg-[#0f172a] cursor-default"
+            className="glass-card max-w-xl md:max-w-2xl w-full rounded-2xl border border-slate-200 dark:border-white/15 p-6 space-y-4 shadow-2xl bg-white dark:bg-[#0f172a] cursor-default max-h-[92vh] overflow-y-auto transition-all"
           >
             
             <div className="flex items-center justify-between border-b border-slate-200 dark:border-white/10 pb-3">
@@ -615,7 +719,7 @@ export const GeographicAnalytics: React.FC = () => {
                 </h3>
               </div>
               <button
-                onClick={() => setSelectedProvinceDossier(null)}
+                onClick={handleCloseDossier}
                 className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-white/10 text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
@@ -650,11 +754,35 @@ export const GeographicAnalytics: React.FC = () => {
                 <span className="text-[10px] text-slate-500 dark:text-slate-400">Surface area</span>
               </div>
 
-              {/* Total Districts */}
-              <div className="bg-slate-50 dark:bg-[#090e1a]/90 p-3 rounded-xl border border-slate-200/80 dark:border-white/10">
-                <span className="text-slate-500 dark:text-slate-400 block text-[10px] font-semibold">Total Districts</span>
-                <strong className="text-blue-600 dark:text-blue-400 font-mono text-sm block mt-0.5">{selectedProvinceDossier.districts} Districts</strong>
-                <span className="text-[10px] text-slate-500 dark:text-slate-400">Administrative units</span>
+              {/* Total Districts - Interactive on Hover or Click */}
+              <div
+                onMouseEnter={handleDistrictsMouseEnter}
+                onMouseLeave={handleDistrictsMouseLeave}
+                onClick={() => setShowDistrictsList((prev) => !prev)}
+                className={`p-3 rounded-xl border transition-all cursor-pointer group relative ${
+                  isDistrictsVisible
+                    ? 'bg-blue-50 dark:bg-blue-950/40 border-blue-500 ring-2 ring-blue-500/20 shadow-sm'
+                    : 'bg-slate-50 dark:bg-[#090e1a]/90 border-slate-200/80 dark:border-white/10 hover:border-blue-400 dark:hover:border-blue-500/60 hover:shadow-sm'
+                }`}
+                title="Hover or click to view all districts with population"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-500 dark:text-slate-400 block text-[10px] font-semibold">Total Districts</span>
+                  <span className="text-[10px] text-blue-600 dark:text-blue-400 font-semibold flex items-center gap-0.5 group-hover:underline">
+                    {showDistrictsList ? (
+                      <><span>Pinned</span><ChevronUp className="w-3 h-3" /></>
+                    ) : (
+                      <><span>View List</span><ChevronDown className="w-3 h-3" /></>
+                    )}
+                  </span>
+                </div>
+                <strong className="text-blue-600 dark:text-blue-400 font-mono text-sm block mt-0.5">
+                  {selectedProvinceDossier.districts} Districts
+                </strong>
+                <span className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5 mt-0.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+                  <span>Hover or click for breakdown</span>
+                </span>
               </div>
 
               {/* Native Name */}
@@ -672,6 +800,112 @@ export const GeographicAnalytics: React.FC = () => {
               </div>
             </div>
 
+            {/* Expandable Districts & Populations Breakdown */}
+            {isDistrictsVisible && (
+              <div
+                onMouseEnter={handleDistrictsMouseEnter}
+                onMouseLeave={handleDistrictsMouseLeave}
+                className="bg-slate-50 dark:bg-[#090e1a] rounded-xl border border-blue-200 dark:border-blue-500/30 p-4 space-y-3 shadow-lg animate-fadeIn"
+              >
+                <div className="flex items-center justify-between border-b border-slate-200 dark:border-white/10 pb-2.5">
+                  <div className="flex items-center gap-2">
+                    <Building2 className="w-4 h-4 text-blue-500 dark:text-blue-400 shrink-0" />
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                        <span>{selectedProvinceDossier.name} Districts</span>
+                        <span className="px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 font-mono text-[10px] font-semibold">
+                          {selectedProvinceDistricts.length} Districts Available
+                        </span>
+                      </h4>
+                      <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                        Official registered civil registry population per district &bull; Capital highlighted with ★
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => {
+                      if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+                      setShowDistrictsList(false);
+                      setDistrictsHovered(false);
+                    }}
+                    className="p-1 rounded-lg hover:bg-slate-200 dark:hover:bg-white/10 text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors cursor-pointer"
+                    title="Close district list"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {/* Scrollable District Items */}
+                <div className="max-h-64 overflow-y-auto pr-1 space-y-1.5">
+                  {selectedProvinceDistricts.length > 0 ? (
+                    selectedProvinceDistricts.map((dist) => (
+                      <div
+                        key={dist.district}
+                        className={`p-2.5 rounded-lg border transition-all flex items-center justify-between gap-3 ${
+                          dist.isCapital
+                            ? 'bg-amber-50/90 dark:bg-amber-950/30 border-amber-400 dark:border-amber-500/50 shadow-sm ring-1 ring-amber-400/30'
+                            : 'bg-white dark:bg-slate-900/80 border-slate-200/80 dark:border-white/5 hover:border-blue-300 dark:hover:border-blue-500/40'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <span className={`w-5 h-5 rounded font-mono text-[10px] flex items-center justify-center shrink-0 font-bold ${
+                            dist.isCapital
+                              ? 'bg-amber-400 text-slate-950 font-black shadow-sm'
+                              : 'bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-300'
+                          }`}>
+                            {dist.isCapital ? '★' : `#${dist.rank}`}
+                          </span>
+                          <div className="truncate">
+                            <div className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-1.5 truncate">
+                              <span className={dist.isCapital ? 'text-amber-700 dark:text-amber-300 font-extrabold' : ''}>
+                                {dist.enName}
+                              </span>
+                              <span className="text-slate-400 font-normal">&bull;</span>
+                              <span className="font-persian text-emerald-600 dark:text-emerald-400 font-normal">
+                                {dist.nativeName}
+                              </span>
+                              {dist.isCapital && (
+                                <span className="ml-1 px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/40 text-[9px] font-bold uppercase tracking-wider flex items-center gap-0.5">
+                                  <Star className="w-2.5 h-2.5 fill-current" />
+                                  <span>Province Capital</span>
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2 text-[10px] text-slate-400 dark:text-slate-500 font-mono mt-0.5">
+                              <span>Code: {dist.district_code || '01'}</span>
+                              {dist.isCapital && (
+                                <>
+                                  <span>&bull;</span>
+                                  <span className="text-amber-600 dark:text-amber-400 font-sans font-medium">
+                                    Official Capital of {selectedProvinceDossier.name}
+                                  </span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="text-right shrink-0">
+                          <strong className={`text-xs font-mono font-bold block ${
+                            dist.isCapital ? 'text-amber-600 dark:text-amber-400' : 'text-blue-600 dark:text-blue-400'
+                          }`}>
+                            {dist.formattedCount} records
+                          </strong>
+                          <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">
+                            {dist.provincePct}% of province
+                          </span>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-6 text-xs text-slate-500 dark:text-slate-400">
+                      No district breakdown records found for this province.
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             <div className="bg-slate-50 dark:bg-[#090e1a]/90 p-4 rounded-xl border border-slate-200/80 dark:border-white/10 text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
               <span className="text-slate-500 dark:text-slate-400 block text-[10px] font-bold uppercase mb-1">Regional Summary</span>
               {selectedProvinceDossier.summary}
@@ -679,7 +913,7 @@ export const GeographicAnalytics: React.FC = () => {
 
             <div className="flex justify-end pt-2">
               <button
-                onClick={() => setSelectedProvinceDossier(null)}
+                onClick={handleCloseDossier}
                 className="px-5 py-2 bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/15 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white font-semibold rounded-xl text-xs transition-all cursor-pointer"
               >
                 Close

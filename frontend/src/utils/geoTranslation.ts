@@ -199,8 +199,8 @@ export function getEnglishDistrictName(district?: string, province?: string): st
     return DISTRICT_EN_MAP[trimmed];
   }
 
-  // Handle pattern 'مرکز (City)'
-  const centerMatch = trimmed.match(/^مرکز\s*\(([^)]+)\)$/);
+  // Handle pattern 'مرکز City' or 'مرکز (City)'
+  const centerMatch = trimmed.match(/^مرکز\s*\(?([^)]+?)\)?$/);
   if (centerMatch) {
     const inside = centerMatch[1].trim();
     const insideEn = DISTRICT_EN_MAP[inside] || PROVINCE_EN_MAP[inside] || inside;
