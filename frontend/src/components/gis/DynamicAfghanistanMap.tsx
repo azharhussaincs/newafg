@@ -6,16 +6,10 @@ import {
   Minimize2,
   ZoomIn,
   ZoomOut,
-  RotateCcw,
-  Layers,
-  MapPin,
-  Flame,
-  Info,
-  Building,
-  Image as ImageIcon
+  RotateCcw
 } from 'lucide-react';
 import afghanistanGeoJSON from './afghanistanMapGeo.json';
-import { ProvinceGISData, PROVINCES_DATA } from '../views/GeographicAnalytics';
+import { ProvinceGISData, PROVINCES_DATA } from '../../data/provincesData';
 import { getEnglishProvinceName } from '../../utils/geoTranslation';
 import { useTheme } from '../../context/ThemeContext';
 
@@ -219,14 +213,14 @@ export const DynamicAfghanistanMap: React.FC<DynamicAfghanistanMapProps> = ({
                 <span style="background: ${isDark ? 'rgba(16,185,129,0.2)' : '#dcfce7'}; color: ${isDark ? '#34d399' : '#15803d'}; font-size: 10px; font-weight: bold; padding: 2px 6px; border-radius: 4px; font-family: monospace;">${gis.id}</span>
               </div>
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; font-size: 11px; margin-bottom: 8px;">
-                <div><span style="color: ${isDark ? '#94a3b8' : '#64748b'};">Capital:</span> <span style="color: ${isDark ? '#e2e8f0' : '#1e293b'}; font-weight: 600;">${gis.capital}</span></div>
-                <div><span style="color: ${isDark ? '#94a3b8' : '#64748b'};">Region:</span> <span style="color: #0284c7; font-weight: 600;">${gis.region}</span></div>
-                <div><span style="color: ${isDark ? '#94a3b8' : '#64748b'};">Area:</span> <span style="color: ${isDark ? '#cbd5e1' : '#334155'};">${gis.area}</span></div>
-                <div><span style="color: ${isDark ? '#94a3b8' : '#64748b'};">Elevation:</span> <span style="color: ${isDark ? '#fbbf24' : '#d97706'};">${gis.elevation}</span></div>
+                <div><span style="color: ${isDark ? '#94a3b8' : '#64748b'};">Capital:</span> <span style="color: ${isDark ? '#fbbf24' : '#d97706'}; font-weight: 700;">★ ${gis.capital}</span></div>
+                <div><span style="color: ${isDark ? '#94a3b8' : '#64748b'};">Total Land:</span> <span style="color: ${isDark ? '#cbd5e1' : '#334155'}; font-weight: 600;">${gis.area}</span></div>
+                <div><span style="color: ${isDark ? '#94a3b8' : '#64748b'};">Total Districts:</span> <span style="color: #0284c7; font-weight: 600;">${gis.districts} Districts</span></div>
+                <div><span style="color: ${isDark ? '#94a3b8' : '#64748b'};">Region:</span> <span style="color: ${isDark ? '#e2e8f0' : '#1e293b'}; font-weight: 600;">${gis.region}</span></div>
               </div>
               <div style="background: ${isDark ? 'rgba(255,255,255,0.04)' : '#f8fafc'}; padding: 6px 8px; border-radius: 6px; border: 1px solid ${isDark ? 'rgba(255,255,255,0.06)' : '#e2e8f0'}; margin-bottom: 6px;">
                 <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 2px;">
-                  <span style="color: ${isDark ? '#94a3b8' : '#64748b'};">Registered Records:</span>
+                  <span style="color: ${isDark ? '#94a3b8' : '#64748b'};">Total Population:</span>
                   <span style="color: ${isDark ? '#10b981' : '#059669'}; font-weight: 800; font-family: monospace;">${recFormatted}</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; font-size: 10px; color: ${isDark ? '#64748b' : '#94a3b8'};">
@@ -235,30 +229,20 @@ export const DynamicAfghanistanMap: React.FC<DynamicAfghanistanMapProps> = ({
                 </div>
               </div>
               <div style="font-size: 10px; color: ${isDark ? '#34d399' : '#059669'}; text-align: center; font-style: italic;">
-                ⚡ Click to open Province Dossier
+                ⚡ Click province for full dossier details
               </div>
             </div>
           `;
         }
       },
       visualMap: mapMode === 'choropleth' ? {
+        show: false,
         min: 0,
         max: maxRecordCount,
-        text: ['High Volume', 'Low Volume'],
-        realtime: false,
-        calculable: true,
-        orient: 'horizontal',
-        left: 'center',
-        bottom: 15,
         inRange: {
           color: isDark
             ? ['#061a33', '#0369a1', '#0284c7', '#0d9488', '#10b981', '#34d399']
             : ['#e0f2fe', '#bae6fd', '#38bdf8', '#0284c7', '#059669', '#10b981']
-        },
-        textStyle: {
-          color: isDark ? '#94a3b8' : '#64748b',
-          fontSize: 10,
-          fontFamily: 'monospace'
         }
       } : undefined,
       geo: {
@@ -269,9 +253,34 @@ export const DynamicAfghanistanMap: React.FC<DynamicAfghanistanMapProps> = ({
         scaleLimit: { min: 0.8, max: 7 },
         label: {
           show: true,
-          color: isDark ? '#cbd5e1' : '#1e293b',
-          fontSize: 9,
-          fontFamily: 'sans-serif'
+          position: 'inside',
+          formatter: (params: any) => {
+            const p = PROVINCES_DATA.find((item) =>
+              item.name.toLowerCase() === params.name?.toLowerCase() ||
+              item.id.toLowerCase() === params.name?.toLowerCase() ||
+              getEnglishProvinceName(params.name)?.toLowerCase() === item.name.toLowerCase()
+            );
+            if (!p) return params.name;
+            return `{prov|${p.name}}\n{cap|★ ${p.capital}}`;
+          },
+          rich: {
+            prov: {
+              color: isDark ? '#f8fafc' : '#0f172a',
+              fontSize: 10.5,
+              fontWeight: 800,
+              lineHeight: 15,
+              textBorderColor: isDark ? '#020617' : '#ffffff',
+              textBorderWidth: 2.5
+            },
+            cap: {
+              color: isDark ? '#fbbf24' : '#b45309',
+              fontSize: 8.5,
+              fontWeight: 600,
+              lineHeight: 12,
+              textBorderColor: isDark ? '#020617' : '#ffffff',
+              textBorderWidth: 2
+            }
+          }
         },
         itemStyle: {
           areaColor: isDark ? '#091024' : '#f8fafc',
@@ -281,9 +290,33 @@ export const DynamicAfghanistanMap: React.FC<DynamicAfghanistanMapProps> = ({
         emphasis: {
           label: {
             show: true,
-            color: '#ffffff',
-            fontWeight: 'bold',
-            fontSize: 12
+            formatter: (params: any) => {
+              const p = PROVINCES_DATA.find((item) =>
+                item.name.toLowerCase() === params.name?.toLowerCase() ||
+                item.id.toLowerCase() === params.name?.toLowerCase() ||
+                getEnglishProvinceName(params.name)?.toLowerCase() === item.name.toLowerCase()
+              );
+              if (!p) return params.name;
+              return `{provHi|${p.name} (${p.nameDari})}\n{capHi|★ Capital: ${p.capital}}`;
+            },
+            rich: {
+              provHi: {
+                color: '#ffffff',
+                fontSize: 12,
+                fontWeight: 900,
+                lineHeight: 16,
+                textBorderColor: '#020617',
+                textBorderWidth: 3
+              },
+              capHi: {
+                color: '#fde047',
+                fontSize: 10,
+                fontWeight: 700,
+                lineHeight: 14,
+                textBorderColor: '#020617',
+                textBorderWidth: 2.5
+              }
+            }
           },
           itemStyle: {
             areaColor: '#059669',
@@ -296,8 +329,33 @@ export const DynamicAfghanistanMap: React.FC<DynamicAfghanistanMapProps> = ({
         select: {
           label: {
             show: true,
-            color: '#ffffff',
-            fontWeight: 'bold'
+            formatter: (params: any) => {
+              const p = PROVINCES_DATA.find((item) =>
+                item.name.toLowerCase() === params.name?.toLowerCase() ||
+                item.id.toLowerCase() === params.name?.toLowerCase() ||
+                getEnglishProvinceName(params.name)?.toLowerCase() === item.name.toLowerCase()
+              );
+              if (!p) return params.name;
+              return `{provSel|${p.name}}\n{capSel|★ ${p.capital}}`;
+            },
+            rich: {
+              provSel: {
+                color: '#ffffff',
+                fontSize: 11,
+                fontWeight: 900,
+                lineHeight: 15,
+                textBorderColor: '#020617',
+                textBorderWidth: 3
+              },
+              capSel: {
+                color: '#fef08a',
+                fontSize: 9.5,
+                fontWeight: 700,
+                lineHeight: 13,
+                textBorderColor: '#020617',
+                textBorderWidth: 2.5
+              }
+            }
           },
           itemStyle: {
             areaColor: '#047857',
@@ -408,78 +466,20 @@ export const DynamicAfghanistanMap: React.FC<DynamicAfghanistanMapProps> = ({
       isFullscreen ? 'fixed inset-4 z-50 flex flex-col bg-white/98 dark:bg-[#070b16]/98 backdrop-blur-3xl shadow-2xl' : 'shadow-sm'
     }`}>
       {/* Dynamic Map HUD Header Bar */}
-      <div className="px-4 py-3 border-b border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-[#050811]/90 flex items-center justify-between flex-wrap gap-2.5">
+      <div className="px-4 py-2.5 border-b border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-[#050811]/90 flex items-center justify-between flex-wrap gap-2.5">
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse shrink-0" />
-            <span className="text-xs font-bold text-slate-900 dark:text-white tracking-wide uppercase">
-              {mapMode === 'archival' ? 'Archival Cartography Scan' : 'Dynamic Afghanistan Vector Cartography'}
-            </span>
-          </div>
-
-          <div className="hidden sm:flex items-center gap-1.5 text-[11px] font-mono text-slate-500 dark:text-slate-400 border-l border-slate-200 dark:border-white/10 pl-3">
-            <span className="text-emerald-600 dark:text-emerald-400 font-bold">34 ADM1 Provinces</span>
-            <span>&bull;</span>
-            <span className="text-amber-600 dark:text-amber-400">Live Spatial Sync</span>
-          </div>
+          {mapMode === 'archival' && (
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 dark:bg-emerald-400 animate-pulse shrink-0" />
+              <span className="text-xs font-bold text-slate-900 dark:text-white tracking-wide uppercase">
+                Archival Cartography Scan
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Layer Mode Switchers & Interaction Controls */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className="flex items-center bg-slate-100 dark:bg-[#0d1424] p-1 rounded-xl border border-slate-200 dark:border-white/10 text-xs">
-            <button
-              onClick={() => setMapMode('choropleth')}
-              className={`px-2.5 py-1 rounded-lg font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
-                mapMode === 'choropleth'
-                  ? 'bg-emerald-600 text-white shadow-sm shadow-emerald-500/30'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-              }`}
-              title="Choropleth Civil Registration Density"
-            >
-              <Flame className="w-3.5 h-3.5" />
-              <span className="hidden md:inline">Record Heat</span>
-            </button>
-
-            <button
-              onClick={() => setMapMode('regional')}
-              className={`px-2.5 py-1 rounded-lg font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
-                mapMode === 'regional'
-                  ? 'bg-emerald-600 text-white shadow-sm shadow-emerald-500/30'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-              }`}
-              title="6-Region Strategic Boundaries"
-            >
-              <Layers className="w-3.5 h-3.5" />
-              <span className="hidden md:inline">Regions</span>
-            </button>
-
-            <button
-              onClick={() => setMapMode('capitals')}
-              className={`px-2.5 py-1 rounded-lg font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
-                mapMode === 'capitals'
-                  ? 'bg-emerald-600 text-white shadow-sm shadow-emerald-500/30'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-              }`}
-              title="34 Provincial Capitals & Kabul Hub"
-            >
-              <MapPin className="w-3.5 h-3.5" />
-              <span className="hidden md:inline">Capitals</span>
-            </button>
-
-            <button
-              onClick={() => setMapMode('archival')}
-              className={`px-2.5 py-1 rounded-lg font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
-                mapMode === 'archival'
-                  ? 'bg-amber-600 text-white shadow-sm shadow-amber-500/30'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-              }`}
-              title="Historical High-Res Scanned Plate"
-            >
-              <ImageIcon className="w-3.5 h-3.5" />
-              <span className="hidden md:inline">Scan Plate</span>
-            </button>
-          </div>
-
+        <div className="flex items-center gap-2 flex-wrap ml-auto">
           {/* Navigation Zoom / Reset Controls */}
           {mapMode !== 'archival' && (
             <div className="flex items-center gap-1 bg-slate-100 dark:bg-[#0d1424] p-1 rounded-xl border border-slate-200 dark:border-white/10">
@@ -519,13 +519,13 @@ export const DynamicAfghanistanMap: React.FC<DynamicAfghanistanMapProps> = ({
       </div>
 
       {/* Main Map Canvas / Viewport */}
-      <div className={`relative w-full ${isFullscreen ? 'flex-1 min-h-0' : 'h-[520px]'}`}>
+      <div className={`relative w-full ${isFullscreen ? 'flex-1 min-h-0' : 'h-[680px] md:h-[750px] lg:h-[820px]'}`}>
         {mapMode === 'archival' ? (
           <div className="w-full h-full flex flex-col items-center justify-center p-4 bg-slate-100 dark:bg-black/80 overflow-auto">
             <img
               src="/afghanistan-map.png"
               alt="Afghanistan National Cartography Map"
-              className="max-h-[460px] w-auto object-contain rounded-lg filter contrast-105 shadow-2xl border border-slate-200 dark:border-white/10"
+              className="max-h-[600px] w-auto object-contain rounded-lg filter contrast-105 shadow-2xl border border-slate-200 dark:border-white/10"
             />
             <p className="mt-2 text-[11px] font-mono text-slate-500 dark:text-slate-400">
               Archival High-Resolution Military Cartography Reference Frame &bull; Registered Cartographic Projection
@@ -553,23 +553,17 @@ export const DynamicAfghanistanMap: React.FC<DynamicAfghanistanMapProps> = ({
                 <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">({hoveredProvince.id})</span>
               </div>
               <div className="text-[10px] text-slate-500 dark:text-slate-400 flex items-center gap-2 mt-0.5">
-                <span>Capital: <strong className="text-slate-800 dark:text-slate-200">{hoveredProvince.capital}</strong></span>
+                <span>Capital: <strong className="text-amber-600 dark:text-amber-400 font-bold">★ {hoveredProvince.capital}</strong></span>
                 <span>&bull;</span>
-                <span>Region: <strong className="text-blue-600 dark:text-cyan-400">{hoveredProvince.region}</strong></span>
+                <span>Districts: <strong className="text-slate-800 dark:text-slate-200 font-mono">{hoveredProvince.districts}</strong></span>
                 <span>&bull;</span>
-                <span>Districts: <strong className="text-amber-600 dark:text-amber-400 font-mono">{hoveredProvince.districts}</strong></span>
+                <span>Land: <strong className="text-slate-800 dark:text-slate-200">{hoveredProvince.area}</strong></span>
               </div>
             </div>
           </div>
         )}
 
-        {/* Map Instructions Badge */}
-        {mapMode !== 'archival' && (
-          <div className="absolute bottom-4 right-4 pointer-events-none hidden sm:flex items-center gap-2 bg-white/90 dark:bg-[#090e1a]/80 backdrop-blur-md border border-slate-200 dark:border-white/10 rounded-xl px-3 py-1.5 text-[11px] text-slate-600 dark:text-slate-400 shadow-sm">
-            <Info className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-            <span>Click any province to view dossier &bull; Drag to pan &bull; Scroll to zoom</span>
-          </div>
-        )}
+
 
         {/* Region Legend (Shown in Regional Mode) */}
         {mapMode === 'regional' && (

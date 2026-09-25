@@ -186,7 +186,7 @@ def main():
 
     # Auto-open browser
     try:
-        webbrowser.open(dashboard_url)
+        webbrowser.open(local_url)
     except Exception:
         pass
 

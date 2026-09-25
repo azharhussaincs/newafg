@@ -92,9 +92,26 @@ export const ExecutiveOverview: React.FC<{ onNavigate: (view: string) => void }>
     );
   }
 
-  // Gender Chart Option
+  // Gender Chart Option - Filter out Code -1 (unspecified) cleanly
+  const validGenderCounts = (kpis.gender_counts || []).filter(
+    (g) => g.value === 0 || g.value === 1
+  );
+
   const genderChartOption = {
-    tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+    tooltip: {
+      trigger: 'item',
+      backgroundColor: isDark ? '#090d16fa' : '#fffffffa',
+      borderColor: isDark ? '#1e293b' : '#e2e8f0',
+      borderWidth: 1,
+      textStyle: { color: isDark ? '#f8fafc' : '#0f172a' },
+      formatter: (params: any) => {
+        return `<div style="padding: 2px 4px;">
+          <div style="font-weight: bold; font-size: 13px; color: ${params.color};">${params.name}</div>
+          <div style="font-size: 12px; margin-top: 4px;"><strong>${Number(params.value).toLocaleString()}</strong> records</div>
+          <div style="font-size: 11px; color: ${isDark ? '#94a3b8' : '#64748b'}; margin-top: 2px;">Share: <strong>${params.percent}%</strong></div>
+        </div>`;
+      }
+    },
     legend: { bottom: '5%', left: 'center', textStyle: { color: isDark ? '#94a3b8' : '#475569', fontSize: 11 } },
     series: [
       {
@@ -105,10 +122,10 @@ export const ExecutiveOverview: React.FC<{ onNavigate: (view: string) => void }>
         itemStyle: { borderRadius: 6, borderColor: isDark ? '#020617' : '#ffffff', borderWidth: 2 },
         label: { show: false },
         emphasis: { label: { show: true, fontSize: 12, fontWeight: 'bold', color: isDark ? '#f8fafc' : '#0f172a' } },
-        data: kpis.gender_counts.map((g) => ({
+        data: validGenderCounts.map((g) => ({
           value: g.count,
-          name: g.value === 0 ? 'Male (مرد)' : (g.value === 1 ? 'Female (زن)' : g.label),
-          itemStyle: { color: g.value === 0 ? '#0284c7' : g.value === 1 ? '#ec4899' : '#a855f7' }
+          name: g.value === 0 ? 'Male (مرد)' : 'Female (زن)',
+          itemStyle: { color: g.value === 0 ? '#0284c7' : '#ec4899' }
         }))
       }
     ]
@@ -178,9 +195,9 @@ export const ExecutiveOverview: React.FC<{ onNavigate: (view: string) => void }>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Total Records */}
         <div
-          onClick={() => onNavigate('explorer')}
+          onClick={() => onNavigate('search')}
           className="p-5 rounded-xl bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 hover:border-blue-400 dark:hover:border-blue-500/60 hover:shadow-md transition-all cursor-pointer group"
-          title="Click to explore all citizen records in Data Explorer"
+          title="Click to search citizen records"
         >
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">

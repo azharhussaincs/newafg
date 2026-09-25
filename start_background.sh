@@ -14,9 +14,14 @@ cd "$BASE_DIR"
 ./stop.sh >/dev/null 2>&1 || true
 sleep 1
 
-# Launch supervisor detached in the background with setsid & nohup
-setsid nohup bash "$BASE_DIR/supervisor.sh" </dev/null >> "$BASE_DIR/supervisor.log" 2>&1 &
+# Launch supervisor detached in the background with nohup
+if command -v setsid &>/dev/null && setsid true 2>/dev/null; then
+    setsid nohup bash "$BASE_DIR/supervisor.sh" </dev/null >> "$BASE_DIR/supervisor.log" 2>&1 &
+else
+    nohup bash "$BASE_DIR/supervisor.sh" </dev/null >> "$BASE_DIR/supervisor.log" 2>&1 &
+fi
 SUPERVISOR_PID=$!
+disown "$SUPERVISOR_PID" 2>/dev/null || true
 
 # Give services a few seconds to start
 sleep 4

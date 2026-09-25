@@ -21,14 +21,19 @@ echo "$$" > "$LOCK_FILE"
 rm -f "$HOME/.config/autostart/dashboard-autostart.desktop" 2>/dev/null || true
 
 # Extend PATH to prioritize virtual environment and standard binary paths
-export PATH="$BASE_DIR/.venv/bin:$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin:$PATH"
+export PATH="/home/ubuntu22/snap/antigravity-cli/common/local/bin:$BASE_DIR/.venv/bin:$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin:$PATH"
 
 BACKEND_PID=""
 FRONTEND_PID=""
+VITE_ENABLED=true
 BACKEND_FAIL_COUNT=0
 FRONTEND_FAIL_COUNT=0
 
+# Ignore terminal hangup so closing any terminal will NOT kill supervisor
+trap '' SIGHUP
+
 cleanup() {
+    trap - SIGINT SIGTERM
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] Supervisor received stop signal. Terminating platform..."
     if [ -n "$BACKEND_PID" ]; then
         kill -TERM "$BACKEND_PID" 2>/dev/null || true
@@ -44,7 +49,7 @@ cleanup() {
     exit 0
 }
 
-trap cleanup SIGINT SIGTERM EXIT
+trap cleanup SIGINT SIGTERM
 
 start_backend() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] Starting FastAPI Backend on 0.0.0.0:8001..."
@@ -55,39 +60,49 @@ start_backend() {
         PYTHON_BIN="$BASE_DIR/.venv/bin/python3"
     elif [ -x "$BASE_DIR/.venv/bin/python" ]; then
         PYTHON_BIN="$BASE_DIR/.venv/bin/python"
-    else
+    elif command -v python3 &>/dev/null; then
         PYTHON_BIN="python3"
+    else
+        PYTHON_BIN="/usr/bin/python3"
     fi
 
     # Run without --reload for 24/7 background stability
-    $PYTHON_BIN -m uvicorn backend.main:app --host 0.0.0.0 --port 8001 >> "$BASE_DIR/backend.log" 2>&1 &
+    nohup $PYTHON_BIN -m uvicorn backend.main:app --host 0.0.0.0 --port 8001 >> "$BASE_DIR/backend.log" 2>&1 &
     BACKEND_PID=$!
     BACKEND_FAIL_COUNT=0
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] Backend launched (PID: $BACKEND_PID)"
 }
 
 start_frontend() {
+    # Find node executable
+    NODE_BIN=""
+    if [ -x "$BASE_DIR/.venv/bin/node" ]; then
+        NODE_BIN="$BASE_DIR/.venv/bin/node"
+    elif [ -x "/home/ubuntu22/snap/antigravity-cli/common/local/bin/node" ]; then
+        NODE_BIN="/home/ubuntu22/snap/antigravity-cli/common/local/bin/node"
+    elif [ -x "$HOME/snap/antigravity-cli/common/local/bin/node" ]; then
+        NODE_BIN="$HOME/snap/antigravity-cli/common/local/bin/node"
+    elif command -v node &>/dev/null; then
+        NODE_BIN="$(command -v node)"
+    fi
+
+    if [ -z "$NODE_BIN" ]; then
+        echo "[$(date '+%Y-%m-%d %H:%M:%S')] Node.js not detected. Frontend is served directly by FastAPI on port 8001." >> "$BASE_DIR/supervisor.log"
+        VITE_ENABLED=false
+        return 0
+    fi
+
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] Starting Vite Frontend on 0.0.0.0:5173..."
     fuser -k 5173/tcp 2>/dev/null || true
     sleep 1
 
     cd "$BASE_DIR/frontend"
-
-    # Find node executable
-    if [ -x "$BASE_DIR/.venv/bin/node" ]; then
-        NODE_BIN="$BASE_DIR/.venv/bin/node"
-    elif [ -x "$HOME/snap/antigravity-cli/common/local/bin/node" ]; then
-        NODE_BIN="$HOME/snap/antigravity-cli/common/local/bin/node"
-    else
-        NODE_BIN="$(command -v node || echo node)"
-    fi
-
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] Using Node: $NODE_BIN ($($NODE_BIN -v 2>&1))" >> "$BASE_DIR/frontend.log"
 
     if [ -f "node_modules/vite/bin/vite.js" ]; then
-        $NODE_BIN node_modules/vite/bin/vite.js --host 0.0.0.0 --port 5173 >> "$BASE_DIR/frontend.log" 2>&1 &
+        nohup $NODE_BIN node_modules/vite/bin/vite.js --host 0.0.0.0 --port 5173 >> "$BASE_DIR/frontend.log" 2>&1 &
     else
-        npx vite --host 0.0.0.0 --port 5173 >> "$BASE_DIR/frontend.log" 2>&1 &
+        nohup $NODE_BIN "$BASE_DIR/frontend/node_modules/.bin/vite" --host 0.0.0.0 --port 5173 >> "$BASE_DIR/frontend.log" 2>&1 &
     fi
     FRONTEND_PID=$!
     FRONTEND_FAIL_COUNT=0
@@ -106,6 +121,9 @@ is_backend_healthy() {
 }
 
 is_frontend_healthy() {
+    if [ "$VITE_ENABLED" != "true" ]; then
+        return 0
+    fi
     if [ -z "$FRONTEND_PID" ] || ! kill -0 "$FRONTEND_PID" 2>/dev/null; then
         return 1
     fi

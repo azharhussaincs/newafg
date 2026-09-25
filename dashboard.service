@@ -5,16 +5,15 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-# User and paths are automatically configured by running ./install_autostart.sh
-# User=username
-# WorkingDirectory=/path/to/Data_Dashboard
-# ExecStart=/path/to/Data_Dashboard/supervisor.sh
-# ExecStop=/path/to/Data_Dashboard/stop.sh
+User=ubuntu22
+WorkingDirectory=/home/ubuntu22/Desktop/newafg
+ExecStart=/home/ubuntu22/Desktop/newafg/supervisor.sh
+ExecStop=/home/ubuntu22/Desktop/newafg/stop.sh
 Restart=always
 RestartSec=5s
-Environment=PATH=.venv/bin:/usr/local/bin:/usr/bin:/bin
-StandardOutput=append:supervisor.log
-StandardError=append:supervisor.log
+Environment=PATH=/home/ubuntu22/snap/antigravity-cli/common/local/bin:/home/ubuntu22/Desktop/newafg/.venv/bin:/home/ubuntu22/.local/bin:/usr/local/bin:/usr/bin:/bin
+StandardOutput=append:/home/ubuntu22/Desktop/newafg/supervisor.log
+StandardError=append:/home/ubuntu22/Desktop/newafg/supervisor.log
 
 [Install]
 WantedBy=multi-user.target

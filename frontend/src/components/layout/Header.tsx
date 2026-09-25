@@ -55,7 +55,6 @@ export const Header: React.FC<HeaderProps> = ({
       case 'overview': return 'Executive Overview';
       case 'gis_cartography': return '34-Province Geocartography GIS Matrix';
       case 'search': return 'Universal Search & Filter Hub';
-      case 'explorer': return 'Civil Data Explorer';
       case 'geographic': return 'Province';
       case 'books': return 'Registry Volumes & Page Explorer';
       case 'relationships': return 'Family Tree & Lineage Intelligence Lab';

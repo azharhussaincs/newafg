@@ -30,7 +30,7 @@ ExecStart=$BASE_DIR/supervisor.sh
 ExecStop=$BASE_DIR/stop.sh
 Restart=always
 RestartSec=5s
-Environment=PATH=$BASE_DIR/.venv/bin:/usr/local/bin:/usr/bin:/bin
+Environment=PATH=/home/$CURRENT_USER/snap/antigravity-cli/common/local/bin:$BASE_DIR/.venv/bin:/home/$CURRENT_USER/.local/bin:/usr/local/bin:/usr/bin:/bin
 StandardOutput=append:$BASE_DIR/supervisor.log
 StandardError=append:$BASE_DIR/supervisor.log
 
@@ -50,25 +50,51 @@ Comment=Enterprise Civil Registry Platform Supervisor
 Icon=applications-system
 EOF
 
-if command -v systemctl &> /dev/null && [ "$(id -u)" -eq 0 -o -n "$SUDO_USER" ] || sudo -n true 2>/dev/null; then
-    echo "[*] Installing systemd service..."
-    sudo cp "$BASE_DIR/dashboard.service" /etc/systemd/system/dashboard.service
-    sudo systemctl daemon-reload
-    sudo systemctl enable dashboard.service
-    # Remove desktop autostart to avoid duplicate launch
-    rm -f "$HOME/.config/autostart/dashboard-autostart.desktop" 2>/dev/null || true
+INSTALLED_SYSTEMD=false
+
+if [ "$(id -u)" -eq 0 ]; then
+    echo "[*] Installing systemd service as root..."
+    cp "$BASE_DIR/dashboard.service" /etc/systemd/system/dashboard.service
+    systemctl daemon-reload
+    systemctl enable dashboard.service
     echo "[+] Systemd service enabled to automatically boot on system restart!"
     echo "[*] Starting dashboard service now..."
-    sudo systemctl restart dashboard.service
-else
-    # Fallback to desktop autostart only if systemd / sudo is not configured
-    echo "[*] Configuring Desktop Autostart as fallback..."
-    mkdir -p "$HOME/.config/autostart"
-    cp "$BASE_DIR/dashboard-autostart.desktop" "$HOME/.config/autostart/"
-    echo "[+] Desktop autostart configured at ~/.config/autostart/dashboard-autostart.desktop"
+    systemctl restart dashboard.service
+    INSTALLED_SYSTEMD=true
+elif command -v sudo &>/dev/null; then
+    echo "[*] Attempting systemd service installation with sudo..."
+    if sudo cp "$BASE_DIR/dashboard.service" /etc/systemd/system/dashboard.service 2>/dev/null; then
+        sudo systemctl daemon-reload
+        sudo systemctl enable dashboard.service
+        echo "[+] Systemd service enabled to automatically boot on system restart!"
+        echo "[*] Starting dashboard service now..."
+        sudo systemctl restart dashboard.service
+        INSTALLED_SYSTEMD=true
+    fi
+fi
+
+# Configure desktop autostart as complement/fallback
+if [ -d "$HOME/.config" ]; then
+    mkdir -p "$HOME/.config/autostart" 2>/dev/null || true
+    if cp "$BASE_DIR/dashboard-autostart.desktop" "$HOME/.config/autostart/" 2>/dev/null; then
+        echo "[+] Desktop autostart configured at ~/.config/autostart/dashboard-autostart.desktop"
+    fi
+fi
+
+# Configure cron @reboot if available
+if command -v crontab &>/dev/null; then
+    (crontab -l 2>/dev/null | grep -F -v "supervisor.sh" ; echo "@reboot $BASE_DIR/supervisor.sh >/dev/null 2>&1") | crontab - 2>/dev/null && echo "[+] Cron @reboot entry configured." || true
 fi
 
 echo "======================================================================"
-echo "  Setup Complete! The platform will automatically start on every reboot"
-echo "  with singleton protection to prevent duplicate instances."
+if [ "$INSTALLED_SYSTEMD" = true ]; then
+    echo "  Setup Complete! Systemd service 'dashboard.service' is ACTIVE and ENABLED."
+    echo "  The platform will automatically start on every reboot / system boot."
+else
+    echo "  Systemd service file prepared at: $BASE_DIR/dashboard.service"
+    echo "  To enable 24/7 boot daemon with root privileges, simply run:"
+    echo "    sudo ./install_autostart.sh"
+    echo "    (or: sudo cp dashboard.service /etc/systemd/system/ && sudo systemctl enable --now dashboard.service)"
+fi
+echo "  Singleton protection is active to prevent any duplicate instances."
 echo "======================================================================"

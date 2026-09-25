@@ -2,7 +2,6 @@ import React from 'react';
 import {
   BarChart3,
   MapPin,
-  Table,
   Search,
   BookOpen,
   GitFork,
@@ -33,7 +32,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const navItems: NavItem[] = [
     { id: 'overview', label: 'Executive Overview', icon: BarChart3 },
     { id: 'geographic', label: 'Province', icon: MapPin },
-    { id: 'explorer', label: 'Civil Data Explorer', icon: Table },
     { id: 'search', label: 'Universal Search Hub', icon: Search },
     { id: 'books', label: 'Books & Page Explorer', icon: BookOpen },
     { id: 'relationships', label: 'Family Tree & Lineage', icon: GitFork }

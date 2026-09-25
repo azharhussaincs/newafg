@@ -17,8 +17,9 @@ set -e
 BASE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$BASE_DIR"
 
-# 1. Ensure scripts are executable
+# 1. Ensure scripts are executable and PATH is configured
 chmod +x "$BASE_DIR"/*.sh "$BASE_DIR"/scripts/*.py 2>/dev/null || true
+export PATH="/home/ubuntu22/snap/antigravity-cli/common/local/bin:$BASE_DIR/.venv/bin:$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin:$PATH"
 
 # 2. Check if supervisor daemon is already actively managing the platform
 if [ -f "$BASE_DIR/.supervisor.lock" ]; then

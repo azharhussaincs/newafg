@@ -516,7 +516,14 @@ def get_overview_kpis(
         row = cursor.fetchone()
         conn.close()
         if row:
-            return json.loads(row[0])
+            res_data = json.loads(row[0])
+            if "gender_counts" in res_data:
+                res_data["gender_counts"] = [g for g in res_data["gender_counts"] if g.get("value") in (0, 1)]
+                total_defined = sum(g.get("count", 0) for g in res_data["gender_counts"])
+                if total_defined > 0:
+                    for g in res_data["gender_counts"]:
+                        g["percentage"] = round((g.get("count", 0) / total_defined) * 100, 2)
+            return res_data
 
     # 2. Filter by province AND gender
     if province and gender is not None and not any([district, dob_year_min is not None, dob_year_max is not None, book_name, q]):

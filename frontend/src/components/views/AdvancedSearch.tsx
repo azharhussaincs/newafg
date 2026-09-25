@@ -159,18 +159,12 @@ export const AdvancedSearch: React.FC<AdvancedSearchProps> = ({ onSelectRecord }
           </div>
           <div>
             <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">Universal Multi-Parametric Search Hub</h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Query indexed civil registry records using exact match, patronymic lineage, or administrative filters
-            </p>
           </div>
         </div>
 
         <form onSubmit={handleSearch} className="space-y-4">
           {/* Universal Query Bar with Afghan Keyboard & Smart Suggestions */}
           <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-              Universal Search Bar (Searches all 16 columns with Dari &amp; Pashto Support)
-            </label>
             <SearchWithAfghanKeyboard
               value={q}
               onChange={(val) => setQ(val)}

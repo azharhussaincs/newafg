@@ -7,7 +7,6 @@ import { GlobalFilterBar } from './components/layout/GlobalFilterBar';
 import { RecordDrawer } from './components/common/RecordDrawer';
 import { ExecutiveOverview } from './components/views/ExecutiveOverview';
 import { AdvancedSearch } from './components/views/AdvancedSearch';
-import { DataExplorer } from './components/views/DataExplorer';
 import { GeographicAnalytics } from './components/views/GeographicAnalytics';
 import { BookPageExplorer } from './components/views/BookPageExplorer';
 import { RelationshipLab } from './components/views/RelationshipLab';
@@ -41,9 +40,9 @@ const MainDashboard: React.FC = () => {
 
   const handleHeaderSearch = (_query: string) => {
     // When executing a search across all records from the header,
-    // navigate to Civil Data Explorer preserving the query that header just set
-    if (activeView !== 'explorer' && activeView !== 'search') {
-      handleNavigate('explorer', true);
+    // navigate to Universal Search Hub preserving the query that header just set
+    if (activeView !== 'search') {
+      handleNavigate('search', true);
     }
   };
 
@@ -63,9 +62,8 @@ const MainDashboard: React.FC = () => {
       case 'geographic':
         return <GeographicAnalytics />;
       case 'search':
-        return <AdvancedSearch onSelectRecord={(r) => setSelectedRecord(r)} />;
       case 'explorer':
-        return <DataExplorer onSelectRecord={(r) => setSelectedRecord(r)} />;
+        return <AdvancedSearch onSelectRecord={(r) => setSelectedRecord(r)} />;
       case 'books':
         return (
           <BookPageExplorer
@@ -100,7 +98,9 @@ const MainDashboard: React.FC = () => {
           onToggleMobileSidebar={() => setMobileSidebarOpen(prev => !prev)}
           onNavigateHome={() => handleNavigate('overview')}
         />
-        <GlobalFilterBar onExportClick={() => setShowExportModal(true)} />
+        {activeView !== 'geographic' && (
+          <GlobalFilterBar onExportClick={() => setShowExportModal(true)} />
+        )}
 
         <main className="flex-1 overflow-y-auto bg-ambient-grid">
           {renderActiveView()}

@@ -9,9 +9,6 @@ import {
   Check,
   ChevronRight,
   Filter,
-  Search,
-  Building,
-  Mountain,
   MapPin,
   ExternalLink,
   X,
@@ -30,54 +27,7 @@ import {
   DisplayMode
 } from '../../utils/geoTranslation';
 
-export interface ProvinceGISData {
-  id: string;
-  name: string;
-  nameDari: string;
-  capital: string;
-  region: 'Central' | 'Northern' | 'Western' | 'Southern' | 'Eastern' | 'Highlands';
-  area: string;
-  elevation: string;
-  districts: string;
-  summary: string;
-}
-
-export const PROVINCES_DATA: ProvinceGISData[] = [
-  { id: "KBL", name: "Kabul", nameDari: "کابل", capital: "Kabul City ★", region: "Central", area: "4,462 km²", elevation: "1,791 m", districts: "15", summary: "Political, cultural, and economic center of Afghanistan, situated in the fertile Kabul River valley." },
-  { id: "HRT", name: "Herat", nameDari: "هرات", capital: "Herat City", region: "Western", area: "54,778 km²", elevation: "920 m", districts: "16", summary: "Major historical, cultural, and trade center in western Afghanistan bordering Iran and Turkmenistan." },
-  { id: "KDH", name: "Kandahar", nameDari: "کندهار", capital: "Kandahar City", region: "Southern", area: "54,022 km²", elevation: "1,010 m", districts: "18", summary: "Key agricultural, commercial, and historical metropolis of southern Afghanistan along the Arghandab River." },
-  { id: "BLK", name: "Balkh", nameDari: "بلخ", capital: "Mazar-i-Sharif", region: "Northern", area: "17,249 km²", elevation: "380 m", districts: "15", summary: "Ancient historic northern hub and trading gateway connecting Central Asian transit routes." },
-  { id: "NAN", name: "Nangarhar", nameDari: "ننگرهار", capital: "Jalalabad", region: "Eastern", area: "7,727 km²", elevation: "575 m", districts: "22", summary: "Eastern regional gateway along the Kabul River basin with rich subtropical agriculture." },
-  { id: "BDK", name: "Badakhshan", nameDari: "بدخشان", capital: "Faizabad", region: "Northern", area: "44,059 km²", elevation: "1,250 m", districts: "28", summary: "Northeastern mountainous province encompassing the Hindu Kush, Pamir mountains, and Wakhan Corridor." },
-  { id: "BAM", name: "Bamyan", nameDari: "بامیان", capital: "Bamyan City", region: "Highlands", area: "14,175 km²", elevation: "2,550 m", districts: "7", summary: "Historic central highlands basin famous for Band-e Amir national lakes and cultural heritage." },
-  { id: "HLD", name: "Helmand", nameDari: "هلمند", capital: "Lashkargah", region: "Southern", area: "58,584 km²", elevation: "780 m", districts: "14", summary: "Largest province by land area in Afghanistan, spanning the extensive Helmand River irrigation network." },
-  { id: "GZ", name: "Ghazni", nameDari: "غزنی", capital: "Ghazni City", region: "Southern", area: "22,915 km²", elevation: "2,219 m", districts: "19", summary: "Historic high-plateau commercial center situated on the Kabul-Kandahar national highway." },
-  { id: "KDZ", name: "Kunduz", nameDari: "کندز", capital: "Kunduz City", region: "Northern", area: "8,040 km²", elevation: "400 m", districts: "7", summary: "Prime northern agricultural hub at the confluence of the Kunduz and Khanabad river systems." },
-  { id: "TAK", name: "Takhar", nameDari: "تخار", capital: "Taloqan", region: "Northern", area: "12,333 km²", elevation: "810 m", districts: "17", summary: "Fertile agricultural and mineral-rich province in northeastern Afghanistan bordering Tajikistan." },
-  { id: "BAG", name: "Baghlan", nameDari: "بغلان", capital: "Puli Khumri", region: "Northern", area: "18,255 km²", elevation: "650 m", districts: "15", summary: "Vital transit and industrial junction connecting Kabul to the northern provinces via Salang Pass." },
-  { id: "SAM", name: "Samangan", nameDari: "سمنگان", capital: "Aybak", region: "Northern", area: "11,218 km²", elevation: "960 m", districts: "7", summary: "Northern province renowned for archaeological landmarks like Takht-e Rustam and coal mining." },
-  { id: "JWZ", name: "Jowzjan", nameDari: "جوزجان", capital: "Sheberghan", region: "Northern", area: "11,798 km²", elevation: "350 m", districts: "11", summary: "Northern energy hub containing major natural gas and petroleum reserves." },
-  { id: "SAR", name: "Sar-e Pol", nameDari: "سرپل", capital: "Sar-e Pol City", region: "Northern", area: "16,360 km²", elevation: "880 m", districts: "7", summary: "Northern agricultural and mineral province in the northern foothills of the Koh-e Baba range." },
-  { id: "FYB", name: "Faryab", nameDari: "فاریاب", capital: "Maymana", region: "Northern", area: "20,293 km²", elevation: "877 m", districts: "14", summary: "Northwestern trade province known for carpets, agriculture, and border crossing at Aqina." },
-  { id: "BDG", name: "Badghis", nameDari: "بادغیس", capital: "Qala-e Naw", region: "Western", area: "20,591 km²", elevation: "967 m", districts: "7", summary: "Northwestern province featuring extensive pistachio forests and the Murghab river valley." },
-  { id: "GHR", name: "Ghor", nameDari: "غور", capital: "Chaghcharan", region: "Highlands", area: "36,479 km²", elevation: "2,250 m", districts: "10", summary: "High mountain central province along the Harirod river, home of the Minaret of Jam." },
-  { id: "DAY", name: "Daikundi", nameDari: "دایکندی", capital: "Nili", region: "Highlands", area: "18,088 km²", elevation: "2,400 m", districts: "9", summary: "Rugged central highlands province with high-altitude almond farming and river canyons." },
-  { id: "URZ", name: "Urozgan", nameDari: "اروزگان", capital: "Tarinkot", region: "Southern", area: "12,640 km²", elevation: "1,350 m", districts: "6", summary: "Geographic transition zone between the central mountains and southern river plains." },
-  { id: "ZAB", name: "Zabul", nameDari: "زابل", capital: "Qalat", region: "Southern", area: "17,343 km²", elevation: "1,550 m", districts: "11", summary: "Southern province along the Tarnak River on the major ring road corridor." },
-  { id: "FRH", name: "Farah", nameDari: "فراه", capital: "Farah City", region: "Western", area: "48,471 km²", elevation: "650 m", districts: "11", summary: "Expansive southwestern province along the Farah River known for greenhouse agriculture." },
-  { id: "NMZ", name: "Nimroz", nameDari: "نیمروز", capital: "Zaranj", region: "Western", area: "41,005 km²", elevation: "490 m", districts: "5", summary: "Southwestern desert border province in the Sistan Basin on the border of Iran and Pakistan." },
-  { id: "PAR", name: "Parwan", nameDari: "پروان", capital: "Charikar", region: "Central", area: "5,974 km²", elevation: "1,600 m", districts: "10", summary: "Strategic central gateway north of Kabul encompassing the Ghorband valley and Salang approach." },
-  { id: "KAP", name: "Kapisa", nameDari: "کاپیسا", capital: "Mahmud-e Raqi", region: "Central", area: "1,842 km²", elevation: "1,450 m", districts: "7", summary: "Compact, densely populated province northeast of Kabul known for grape vineyards." },
-  { id: "PAN", name: "Panjshir", nameDari: "پنجشیر", capital: "Bazarak", region: "Central", area: "3,610 km²", elevation: "2,000 m", districts: "7", summary: "Scenic alpine valley along the Panjshir River known for emerald mining." },
-  { id: "LAG", name: "Laghman", nameDari: "لغمان", capital: "Mehtarlam", region: "Eastern", area: "3,843 km²", elevation: "772 m", districts: "5", summary: "Eastern valley province watered by the Alingar and Alishing rivers." },
-  { id: "KNR", name: "Kunar", nameDari: "کنر", capital: "Asadabad", region: "Eastern", area: "4,942 km²", elevation: "820 m", districts: "15", summary: "Heavily forested mountainous province in eastern Afghanistan along the Kunar River." },
-  { id: "NUR", name: "Nuristan", nameDari: "نورستان", capital: "Parun", region: "Eastern", area: "9,225 km²", elevation: "2,600 m", districts: "8", summary: "Dense pine-forested alpine province across southern Hindu Kush slopes." },
-  { id: "LOG", name: "Logar", nameDari: "لوگر", capital: "Pul-i-Alam", region: "Central", area: "3,880 km²", elevation: "1,880 m", districts: "7", summary: "Central province south of Kabul containing the vast Mes Aynak copper reserve." },
-  { id: "WRD", name: "Wardak", nameDari: "وردک", capital: "Maidan Shahr", region: "Central", area: "9,934 km²", elevation: "2,150 m", districts: "9", summary: "Central highland gateway province renowned for apple orchards and Behsud uplands." },
-  { id: "PKT", name: "Paktia", nameDari: "پکتیا", capital: "Gardez", region: "Eastern", area: "6,432 km²", elevation: "2,300 m", districts: "14", summary: "Southeastern highlands province centered around the ancient fortress city of Gardez." },
-  { id: "KHS", name: "Khost", nameDari: "خوست", capital: "Khost City", region: "Eastern", area: "4,152 km²", elevation: "1,020 m", districts: "13", summary: "Dynamic southeastern border hub with commercial markets and pine forests." },
-  { id: "PKA", name: "Paktika", nameDari: "پکتیکا", capital: "Sharana", region: "Eastern", area: "19,482 km²", elevation: "2,100 m", districts: "19", summary: "Expansive southeastern province featuring rolling hills, river valleys, and pine highlands." }
-];
+import { ProvinceGISData, PROVINCES_DATA } from '../../data/provincesData';
 
 export const GeographicAnalytics: React.FC = () => {
   const { theme } = useTheme();
@@ -90,9 +40,17 @@ export const GeographicAnalytics: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'matrix_cartography' | 'analytics_charts'>('matrix_cartography');
 
   // Matrix Filter Controls
-  const [gisSearch, setGisSearch] = useState<string>('');
-  const [selectedRegion, setSelectedRegion] = useState<string>('ALL');
   const [selectedProvinceDossier, setSelectedProvinceDossier] = useState<ProvinceGISData | null>(null);
+
+  const selectedProvinceStat = useMemo(() => {
+    if (!selectedProvinceDossier || !data?.provinces) return null;
+    return data.provinces.find(p =>
+      p.province_code === selectedProvinceDossier.id ||
+      p.province === selectedProvinceDossier.nameDari ||
+      p.province.toLowerCase() === selectedProvinceDossier.name.toLowerCase() ||
+      getEnglishProvinceName(p.province).toLowerCase() === selectedProvinceDossier.name.toLowerCase()
+    );
+  }, [selectedProvinceDossier, data]);
 
   // Analytics Presentation Controls
   const [displayMode, setDisplayMode] = useState<DisplayMode>('bilingual');
@@ -125,21 +83,6 @@ export const GeographicAnalytics: React.FC = () => {
     if (!data?.provinces) return 31164973;
     return data.provinces.reduce((acc, p) => acc + p.count, 0);
   }, [data]);
-
-  const regionsList = ['ALL', 'Central', 'Northern', 'Western', 'Southern', 'Eastern', 'Highlands'];
-
-  const filteredProvinces = useMemo(() => {
-    return PROVINCES_DATA.filter(p => {
-      const matchRegion = selectedRegion === 'ALL' || p.region === selectedRegion;
-      const term = gisSearch.toLowerCase().trim();
-      const matchSearch = !term ||
-        p.name.toLowerCase().includes(term) ||
-        p.nameDari.includes(term) ||
-        p.capital.toLowerCase().includes(term) ||
-        p.id.toLowerCase().includes(term);
-      return matchRegion && matchSearch;
-    });
-  }, [gisSearch, selectedRegion]);
 
   // ECharts Treemap Palette
   const treemapPalette = useMemo(() => [
@@ -366,11 +309,7 @@ export const GeographicAnalytics: React.FC = () => {
               <h2 className="text-lg font-black tracking-tight text-slate-900 dark:text-white">
                 AFGHANISTAN GEOCARTOGRAPHY GIS MATRIX
               </h2>
-              <span className="badge-glass badge-cyan">34 PROVINCES &bull; 412 DISTRICTS</span>
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Consolidated spatial intelligence, 34-province GIS dossier matrix, and multi-million civil registration demographics.
-            </p>
           </div>
         </div>
 
@@ -417,10 +356,6 @@ export const GeographicAnalytics: React.FC = () => {
                   National Cartography Spatial Frame
                 </h3>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="badge-glass badge-gold">&star; KABUL [CAPITAL]</span>
-                <span className="badge-glass badge-green">34 PROVINCES ACTIVE</span>
-              </div>
             </div>
 
             {/* Dynamic Interactive National Cartography Viewport */}
@@ -430,127 +365,6 @@ export const GeographicAnalytics: React.FC = () => {
               selectedProvinceId={selectedProvinceDossier?.id}
               onSelectProvince={(prov) => setSelectedProvinceDossier(prov)}
             />
-
-            {/* Quick Province Jump Pills */}
-            <div className="flex items-center gap-1.5 flex-wrap pt-1 text-xs">
-              <span className="font-bold text-slate-500 dark:text-slate-400 text-[11px] mr-1">Quick Jump:</span>
-              {PROVINCES_DATA.slice(0, 10).map((p) => (
-                <button
-                  key={p.id}
-                  onClick={() => setSelectedProvinceDossier(p)}
-                  className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all cursor-pointer ${
-                    p.id === 'KBL'
-                      ? 'bg-amber-50 dark:bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-500/40 hover:bg-amber-100 dark:hover:bg-amber-500/30'
-                      : 'bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-white/5 hover:border-emerald-500/40'
-                  }`}
-                >
-                  {p.id === 'KBL' ? '★ Kabul (Capital)' : p.name}
-                </button>
-              ))}
-            </div>
-
-          </div>
-
-          {/* 34-Province Directory Grid */}
-          <div className="glass-card p-5 rounded-2xl border border-slate-200/80 dark:border-white/10 space-y-4">
-            
-            {/* Filter Bar */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-200/80 dark:border-white/10 pb-3">
-              <div className="flex items-center gap-2">
-                <Building className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
-                <span className="text-sm font-bold text-slate-900 dark:text-white">34-Province GIS Directory</span>
-                <span className="badge-glass badge-cyan">{filteredProvinces.length} Provinces</span>
-              </div>
-
-              <div className="flex flex-wrap items-center gap-2">
-                <div className="relative">
-                  <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-400" />
-                  <input
-                    type="text"
-                    placeholder="Search province, Dari or capital..."
-                    value={gisSearch}
-                    onChange={(e) => setGisSearch(e.target.value)}
-                    className="w-56 bg-slate-50 dark:bg-[#090e1a]/90 border border-slate-200 dark:border-white/10 focus:border-emerald-500 rounded-xl pl-8 pr-3 py-1.5 text-xs text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none"
-                  />
-                </div>
-
-                <div className="flex bg-slate-100 dark:bg-[#090e1a] p-0.5 rounded-xl border border-slate-200 dark:border-white/10">
-                  {regionsList.map(r => (
-                    <button
-                      key={r}
-                      onClick={() => setSelectedRegion(r)}
-                      className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
-                        selectedRegion === r
-                          ? 'bg-emerald-600 text-white'
-                          : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-                      }`}
-                    >
-                      {r}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Province Card Matrix */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3.5">
-              {filteredProvinces.map((p) => {
-                const isKabul = p.id === 'KBL';
-                return (
-                  <div
-                    key={p.id}
-                    onClick={() => setSelectedProvinceDossier(p)}
-                    className={`glass-card p-4 rounded-xl border transition-all cursor-pointer hover:translate-y-[-2px] ${
-                      isKabul
-                        ? 'border-amber-400 dark:border-amber-500/50 bg-amber-50/50 dark:bg-amber-500/[0.04] shadow-md shadow-amber-500/10'
-                        : 'border-slate-200/80 dark:border-white/10 hover:border-emerald-500/40 bg-white dark:bg-[#0f172a]/70 shadow-sm'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-slate-300">
-                        {p.id}
-                      </span>
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                        isKabul
-                          ? 'bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-500/30'
-                          : 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20'
-                      }`}>
-                        {p.region}
-                      </span>
-                    </div>
-
-                    <div className="mb-2">
-                      <h4 className="text-sm font-bold text-slate-900 dark:text-white flex items-center justify-between">
-                        <span>{p.name}</span>
-                        <span className="font-persian text-xs text-emerald-600 dark:text-emerald-400">{p.nameDari}</span>
-                      </h4>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
-                        Capital: <strong className="text-slate-800 dark:text-slate-200">{p.capital}</strong>
-                      </p>
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-1 py-1.5 border-t border-b border-slate-100 dark:border-white/5 text-[10px] font-mono text-center">
-                      <div>
-                        <span className="text-slate-400 dark:text-slate-500 block text-[9px]">Districts</span>
-                        <span className="text-slate-800 dark:text-slate-200 font-bold">{p.districts}</span>
-                      </div>
-                      <div>
-                        <span className="text-slate-400 dark:text-slate-500 block text-[9px]">Area</span>
-                        <span className="text-slate-800 dark:text-slate-200">{p.area.split(' ')[0]}</span>
-                      </div>
-                      <div>
-                        <span className="text-slate-400 dark:text-slate-500 block text-[9px]">Elev</span>
-                        <span className="text-cyan-600 dark:text-cyan-400 font-medium">{p.elevation}</span>
-                      </div>
-                    </div>
-
-                    <p className="text-[10px] text-slate-600 dark:text-slate-400 mt-2 line-clamp-2 leading-relaxed">
-                      {p.summary}
-                    </p>
-                  </div>
-                );
-              })}
-            </div>
 
           </div>
 
@@ -784,8 +598,14 @@ export const GeographicAnalytics: React.FC = () => {
 
       {/* Provincial Dossier Modal */}
       {selectedProvinceDossier && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 dark:bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="glass-card max-w-xl w-full rounded-2xl border border-slate-200 dark:border-white/15 p-6 space-y-4 shadow-2xl bg-white dark:bg-[#0f172a]">
+        <div
+          onClick={() => setSelectedProvinceDossier(null)}
+          className="fixed inset-0 z-50 bg-slate-900/60 dark:bg-black/80 backdrop-blur-md flex items-center justify-center p-4 cursor-pointer"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="glass-card max-w-xl w-full rounded-2xl border border-slate-200 dark:border-white/15 p-6 space-y-4 shadow-2xl bg-white dark:bg-[#0f172a] cursor-default"
+          >
             
             <div className="flex items-center justify-between border-b border-slate-200 dark:border-white/10 pb-3">
               <div className="flex items-center gap-2">
@@ -803,29 +623,52 @@ export const GeographicAnalytics: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-2 gap-3 text-xs">
+              {/* Total Population */}
               <div className="bg-slate-50 dark:bg-[#090e1a]/90 p-3 rounded-xl border border-slate-200/80 dark:border-white/10">
-                <span className="text-slate-500 dark:text-slate-400 block text-[10px]">Native Script</span>
-                <strong className="text-emerald-600 dark:text-emerald-400 text-sm font-persian">{selectedProvinceDossier.nameDari}</strong>
+                <span className="text-slate-500 dark:text-slate-400 block text-[10px] font-semibold">Total Population</span>
+                <strong className="text-emerald-600 dark:text-emerald-400 text-sm font-mono font-bold block mt-0.5">
+                  {selectedProvinceStat?.count ? Number(selectedProvinceStat.count).toLocaleString() : 'N/A'}
+                </strong>
+                {selectedProvinceStat?.percentage ? (
+                  <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">
+                    {Number(selectedProvinceStat.percentage).toFixed(2)}% of national
+                  </span>
+                ) : null}
               </div>
+
+              {/* Province Capital */}
               <div className="bg-slate-50 dark:bg-[#090e1a]/90 p-3 rounded-xl border border-slate-200/80 dark:border-white/10">
-                <span className="text-slate-500 dark:text-slate-400 block text-[10px]">Capital Center</span>
-                <strong className="text-slate-900 dark:text-white text-sm">{selectedProvinceDossier.capital}</strong>
+                <span className="text-slate-500 dark:text-slate-400 block text-[10px] font-semibold">Province Capital</span>
+                <strong className="text-amber-600 dark:text-amber-400 text-sm block mt-0.5 font-bold">★ {selectedProvinceDossier.capital}</strong>
+                <span className="text-[10px] text-slate-500 dark:text-slate-400">Capital center</span>
               </div>
+
+              {/* Total Land */}
               <div className="bg-slate-50 dark:bg-[#090e1a]/90 p-3 rounded-xl border border-slate-200/80 dark:border-white/10">
-                <span className="text-slate-500 dark:text-slate-400 block text-[10px]">Geographic Region</span>
-                <strong className="text-cyan-600 dark:text-cyan-400">{selectedProvinceDossier.region} Afghanistan</strong>
+                <span className="text-slate-500 dark:text-slate-400 block text-[10px] font-semibold">Total Land</span>
+                <strong className="text-slate-800 dark:text-slate-200 font-mono text-sm block mt-0.5">{selectedProvinceDossier.area}</strong>
+                <span className="text-[10px] text-slate-500 dark:text-slate-400">Surface area</span>
               </div>
+
+              {/* Total Districts */}
               <div className="bg-slate-50 dark:bg-[#090e1a]/90 p-3 rounded-xl border border-slate-200/80 dark:border-white/10">
-                <span className="text-slate-500 dark:text-slate-400 block text-[10px]">Districts Count</span>
-                <strong className="text-slate-900 dark:text-white font-mono">{selectedProvinceDossier.districts} Districts</strong>
+                <span className="text-slate-500 dark:text-slate-400 block text-[10px] font-semibold">Total Districts</span>
+                <strong className="text-blue-600 dark:text-blue-400 font-mono text-sm block mt-0.5">{selectedProvinceDossier.districts} Districts</strong>
+                <span className="text-[10px] text-slate-500 dark:text-slate-400">Administrative units</span>
               </div>
+
+              {/* Native Name */}
               <div className="bg-slate-50 dark:bg-[#090e1a]/90 p-3 rounded-xl border border-slate-200/80 dark:border-white/10">
-                <span className="text-slate-500 dark:text-slate-400 block text-[10px]">Surface Land Area</span>
-                <strong className="text-slate-800 dark:text-slate-200 font-mono">{selectedProvinceDossier.area}</strong>
+                <span className="text-slate-500 dark:text-slate-400 block text-[10px] font-semibold">Native Name</span>
+                <strong className="text-emerald-600 dark:text-emerald-400 text-sm font-persian block mt-0.5">{selectedProvinceDossier.nameDari}</strong>
+                <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">Code: {selectedProvinceDossier.id}</span>
               </div>
+
+              {/* Geographic Region */}
               <div className="bg-slate-50 dark:bg-[#090e1a]/90 p-3 rounded-xl border border-slate-200/80 dark:border-white/10">
-                <span className="text-slate-500 dark:text-slate-400 block text-[10px]">Median Elevation</span>
-                <strong className="text-amber-600 dark:text-amber-400 font-mono">{selectedProvinceDossier.elevation}</strong>
+                <span className="text-slate-500 dark:text-slate-400 block text-[10px] font-semibold">Geographic Region</span>
+                <strong className="text-cyan-600 dark:text-cyan-400 text-sm block mt-0.5">{selectedProvinceDossier.region}</strong>
+                <span className="text-[10px] text-slate-500 dark:text-slate-400">Afghanistan</span>
               </div>
             </div>
 
@@ -834,19 +677,10 @@ export const GeographicAnalytics: React.FC = () => {
               {selectedProvinceDossier.summary}
             </div>
 
-            <div className="flex justify-end gap-3 pt-2">
-              <button
-                onClick={() => {
-                  setProvince(selectedProvinceDossier.nameDari);
-                  setSelectedProvinceDossier(null);
-                }}
-                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-xl text-xs transition-all cursor-pointer shadow-sm"
-              >
-                Filter Civil Records by {selectedProvinceDossier.name}
-              </button>
+            <div className="flex justify-end pt-2">
               <button
                 onClick={() => setSelectedProvinceDossier(null)}
-                className="px-4 py-2 bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/15 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white font-semibold rounded-xl text-xs transition-all cursor-pointer"
+                className="px-5 py-2 bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/15 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white font-semibold rounded-xl text-xs transition-all cursor-pointer"
               >
                 Close
               </button>
