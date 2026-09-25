@@ -103,7 +103,7 @@ const MainDashboard: React.FC = () => {
           onToggleMobileSidebar={() => setMobileSidebarOpen(prev => !prev)}
           onNavigateHome={() => handleNavigate('overview')}
         />
-        {activeView !== 'geographic' && (
+        {activeView !== 'geographic' && activeView !== 'books' && (
           <GlobalFilterBar onExportClick={() => setShowExportModal(true)} />
         )}
 

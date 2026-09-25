@@ -467,34 +467,10 @@ export const BookPageExplorer: React.FC<BookPageExplorerProps> = ({
     }
   }, [availableVolumes, selectedVolume]);
 
-  // Filter books by Province, District, Year, Volume, Edition & Campaign
+  // Available books for selected category
   const filteredBooks = useMemo(() => {
-    if (!typeBooks || typeBooks.length === 0) return [];
-    return typeBooks.filter(b => {
-      if (currentProvince && !matchesProvince(b.book_name, b.province, currentProvince)) {
-        return false;
-      }
-      if (currentDistrict && !matchesDistrict(b.book_name, currentDistrict, currentProvince)) {
-        return false;
-      }
-      if (selectedYear && !bookMatchesYear(b.book_name, selectedYear)) {
-        return false;
-      }
-      if (selectedVolume && !bookMatchesVolume(b.book_name, selectedVolume)) {
-        return false;
-      }
-      if (selectedEdition === 'naql' && !(b.is_copy || isBookCopy(b.book_name))) {
-        return false;
-      }
-      if (selectedEdition === 'asl' && (b.is_copy || isBookCopy(b.book_name))) {
-        return false;
-      }
-      if (selectedCampaign === 'pmu' && !(b.is_pmu || isBookPMU(b.book_name))) {
-        return false;
-      }
-      return true;
-    });
-  }, [typeBooks, currentProvince, currentDistrict, selectedYear, selectedVolume, selectedEdition, selectedCampaign]);
+    return typeBooks || [];
+  }, [typeBooks]);
 
   // Filter books by search query
   const searchedBooks = useMemo(() => {
@@ -682,7 +658,7 @@ export const BookPageExplorer: React.FC<BookPageExplorerProps> = ({
         </div>
 
         {/* Reset button */}
-        {(activeFilterCount > 0 || currentBook || currentProvince || currentDistrict || selectedYear || selectedVolume || selectedEdition !== 'all' || selectedCampaign !== 'all' || selectedType !== 'all') && (
+        {(activeFilterCount > 0 || currentBook || currentProvince || currentDistrict || selectedType !== 'all') && (
           <button
             onClick={handleResetFilters}
             className="px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center gap-1.5 transition-colors cursor-pointer self-start sm:self-auto border border-slate-200 dark:border-slate-700"
@@ -701,10 +677,6 @@ export const BookPageExplorer: React.FC<BookPageExplorerProps> = ({
         <div className="flex items-center justify-end">
 
           <span className="text-[11px] text-slate-500 font-mono">
-            {selectedVolume ? `${getVolumeLabel(selectedVolume)} • ` : ''}
-            {selectedYear ? `Year ${selectedYear} SH • ` : ''}
-            {selectedEdition !== 'all' ? (selectedEdition === 'asl' ? 'اصل • ' : 'نقل • ') : ''}
-            {selectedCampaign !== 'all' ? 'پی‌ام‌یو • ' : ''}
             {currentDistrict
               ? `${filteredBooks.length.toLocaleString()} books in ${getEnglishDistrictName(currentDistrict, currentProvince)} (of ${activeTypeObj.count.toLocaleString()} total)`
               : currentProvince 
@@ -841,123 +813,6 @@ export const BookPageExplorer: React.FC<BookPageExplorerProps> = ({
             </div>
           </div>
         )}
-      </div>
-
-      {/* ========================================================================= */}
-      {/* 3. STEP 2: PROVINCE, DISTRICT, YEAR, VOLUME, EDITION & CAMPAIGN FILTERS   */}
-      {/* ========================================================================= */}
-      <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-2.5">
-        
-        {/* Province Dropdown */}
-        <div className="w-full flex items-center gap-2">
-          <MapPin className="w-4 h-4 text-blue-500 shrink-0" />
-          <select
-            value={currentProvince}
-            onChange={(e) => handleProvinceChange(e.target.value)}
-            className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-2.5 py-2 text-xs text-slate-800 dark:text-slate-200 font-medium focus:outline-none focus:ring-1 focus:ring-brand-500 cursor-pointer truncate"
-          >
-            <option value="">All 34 Provinces (همه ولایات)</option>
-            {filterOptions.provinces_with_counts && filterOptions.provinces_with_counts.length > 0
-              ? filterOptions.provinces_with_counts.map((p) => (
-                  <option key={p.province} value={p.province}>
-                    {getEnglishProvinceName(p.province)} • {p.province}
-                  </option>
-                ))
-              : filterOptions.provinces.map((p) => (
-                  <option key={p} value={p}>
-                    {getEnglishProvinceName(p)} • {p}
-                  </option>
-                ))}
-          </select>
-        </div>
-
-        {/* District Dropdown */}
-        <div className="w-full flex items-center gap-2">
-          <Navigation className="w-4 h-4 text-indigo-500 shrink-0" />
-          <select
-            value={currentDistrict}
-            onChange={(e) => handleDistrictChange(e.target.value)}
-            className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-2.5 py-2 text-xs text-slate-800 dark:text-slate-200 font-medium focus:outline-none focus:ring-1 focus:ring-brand-500 cursor-pointer truncate"
-          >
-            <option value="">
-              {currentProvince ? `Districts in ${getEnglishProvinceName(currentProvince)}` : 'All Districts (همه ولسوالی‌ها)'}
-            </option>
-            {availableDistricts.map((d) => {
-              const provNote = !currentProvince && d.province ? ` [${getEnglishProvinceName(d.province)}]` : '';
-              const countNote = d.count ? ` (${d.count.toLocaleString()})` : '';
-              return (
-                <option key={`${d.province || ''}-${d.district}`} value={d.district}>
-                  {getEnglishDistrictName(d.district, currentProvince || d.province)} • {d.district}{provNote}{countNote}
-                </option>
-              );
-            })}
-          </select>
-        </div>
-
-        {/* Registration Year Dropdown */}
-        <div className="w-full flex items-center gap-2">
-          <Calendar className="w-4 h-4 text-amber-500 shrink-0" />
-          <select
-            value={selectedYear || ''}
-            onChange={(e) => handleYearChange(e.target.value)}
-            className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-2.5 py-2 text-xs text-slate-800 dark:text-slate-200 font-medium focus:outline-none focus:ring-1 focus:ring-brand-500 cursor-pointer truncate"
-          >
-            <option value="">
-              {availableYears.length > 0 ? `All Years (${availableYears.length}) • همه سال‌ها` : 'All Years • همه سال‌ها'}
-            </option>
-            {availableYears.map((item) => (
-              <option key={item.year} value={item.year}>
-                Year {item.year} SH • سال {item.year} ({item.count.toLocaleString()})
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Volume Number Dropdown */}
-        <div className="w-full flex items-center gap-2">
-          <BookMarked className="w-4 h-4 text-emerald-500 shrink-0" />
-          <select
-            value={selectedVolume || ''}
-            onChange={(e) => handleVolumeChange(e.target.value)}
-            className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-2.5 py-2 text-xs text-slate-800 dark:text-slate-200 font-medium focus:outline-none focus:ring-1 focus:ring-brand-500 cursor-pointer truncate"
-          >
-            <option value="">
-              {availableVolumes.length > 0 ? `All Volumes (${availableVolumes.length}) • همه جلدها` : 'All Volumes • همه جلدها'}
-            </option>
-            {availableVolumes.map((item) => (
-              <option key={item.volume} value={item.volume}>
-                {getVolumeLabel(item.volume)} ({item.count.toLocaleString()})
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Edition / Copy Status Dropdown */}
-        <div className="w-full flex items-center gap-2">
-          <Layers className="w-4 h-4 text-purple-500 shrink-0" />
-          <select
-            value={selectedEdition}
-            onChange={(e) => handleEditionChange(e.target.value as 'all' | 'asl' | 'naql')}
-            className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-2.5 py-2 text-xs text-slate-800 dark:text-slate-200 font-medium focus:outline-none focus:ring-1 focus:ring-brand-500 cursor-pointer truncate"
-          >
-            <option value="all">All Editions • اصل و نقل</option>
-            <option value="asl">اصل (Original Books)</option>
-            <option value="naql">نقل (Official Copies)</option>
-          </select>
-        </div>
-
-        {/* Project / PMU Campaign Dropdown */}
-        <div className="w-full flex items-center gap-2">
-          <Zap className="w-4 h-4 text-cyan-500 shrink-0" />
-          <select
-            value={selectedCampaign}
-            onChange={(e) => handleCampaignChange(e.target.value as 'all' | 'pmu')}
-            className="w-full bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-2.5 py-2 text-xs text-slate-800 dark:text-slate-200 font-medium focus:outline-none focus:ring-1 focus:ring-brand-500 cursor-pointer truncate"
-          >
-            <option value="all">All Projects • همه پروژه‌ها</option>
-            <option value="pmu">پروژه پی‌ام‌یو (PMU Campaign)</option>
-          </select>
-        </div>
       </div>
 
       {/* ========================================================================= */}
