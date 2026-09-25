@@ -63,7 +63,12 @@ const MainDashboard: React.FC = () => {
         return <GeographicAnalytics />;
       case 'search':
       case 'explorer':
-        return <AdvancedSearch onSelectRecord={(r) => setSelectedRecord(r)} />;
+        return (
+          <AdvancedSearch
+            onSelectRecord={(r) => setSelectedRecord(r)}
+            onViewFamilyTree={handleViewFamilyTree}
+          />
+        );
       case 'books':
         return (
           <BookPageExplorer

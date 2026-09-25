@@ -156,6 +156,9 @@ def init_db(conn: sqlite3.Connection = None):
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_records_book ON records (book_name);")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_records_prov_code ON records (province_code);")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_records_dist_code ON records (district_code);")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_records_gname ON records (gname);")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_records_record_num ON records (record_number);")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_records_page_num ON records (page_number);")
 
     # Reference Extension: Humanitarian RTP Relief Registry (626K survey schema)
     cursor.execute("""

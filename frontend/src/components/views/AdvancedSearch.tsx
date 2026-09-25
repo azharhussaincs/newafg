@@ -6,13 +6,18 @@ import { useFilters } from '../../context/FilterContext';
 import { ExportModal } from '../common/ExportModal';
 import { SearchWithAfghanKeyboard } from '../common/SearchWithAfghanKeyboard';
 import { AfghanVirtualKeyboard } from '../common/AfghanVirtualKeyboard';
+import {
+  getEnglishProvinceName,
+  getEnglishDistrictName,
+  getCleanNativeName
+} from '../../utils/geoTranslation';
 
 interface AdvancedSearchProps {
   onSelectRecord: (record: RecordItem) => void;
 }
 
 export const AdvancedSearch: React.FC<AdvancedSearchProps> = ({ onSelectRecord }) => {
-  const { filterOptions, filters, setFiltersBatch, clearFilters } = useFilters();
+  const { filterOptions, filters, setFiltersBatch, clearFilters, setSearchQuery, searchScope } = useFilters();
   const [q, setQ] = useState(filters.search_query || '');
   const [name, setName] = useState('');
   const [fname, setFname] = useState('');
@@ -152,13 +157,33 @@ export const AdvancedSearch: React.FC<AdvancedSearchProps> = ({ onSelectRecord }
   return (
     <div className="p-6 space-y-6">
       {/* Search Header Banner */}
+      {/* Search Header Banner */}
       <div className="p-5 rounded-xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 shadow-sm">
-        <div className="flex items-center space-x-3 mb-4">
-          <div className="p-2 rounded-lg bg-brand-600/10 text-brand-600 dark:text-brand-400">
-            <Search className="w-5 h-5" />
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 rounded-lg bg-emerald-600/10 text-emerald-600 dark:text-emerald-400">
+              <Search className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">Universal Multi-Parametric Search Hub</h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Unified master search across 31.1M civil registrations with granular demographic filters
+              </p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-base font-bold text-slate-900 dark:text-slate-100">Universal Multi-Parametric Search Hub</h2>
+
+          {/* Master Scope Badge */}
+          <div className="flex items-center gap-2 text-xs">
+            <span className="text-slate-400 text-[11px]">ستون جستجوی سراسری:</span>
+            <span className="px-2 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700/60 font-semibold text-[11px]">
+              {searchScope.name && !searchScope.fname && !searchScope.gname && 'نام شخص (Name Only)'}
+              {!searchScope.name && searchScope.fname && !searchScope.gname && 'نام پدر (Father Only)'}
+              {!searchScope.name && !searchScope.fname && searchScope.gname && 'نام پدرکلان (Grandfather Only)'}
+              {searchScope.name && searchScope.fname && !searchScope.gname && 'نام و ولد (Name & Father)'}
+              {searchScope.name && !searchScope.fname && searchScope.gname && 'نام و پدرکلان (Name & Grandfather)'}
+              {!searchScope.name && searchScope.fname && searchScope.gname && 'ولد و پدرکلان (Father & Grandfather)'}
+              {(!searchScope.name && !searchScope.fname && !searchScope.gname) && 'تمام ۳ ستون (All 3 Columns)'}
+            </span>
           </div>
         </div>
 
@@ -167,15 +192,20 @@ export const AdvancedSearch: React.FC<AdvancedSearchProps> = ({ onSelectRecord }
           <div>
             <SearchWithAfghanKeyboard
               value={q}
-              onChange={(val) => setQ(val)}
+              onChange={(val) => {
+                setQ(val);
+                setSearchQuery(val || undefined);
+              }}
               onSearch={() => handleSearch()}
-              placeholder="Search by any term (e.g. ظریفه, انصار الله, کابل, موسهی...)"
+              placeholder="جستجوی همگانی (نام، ولد، شماره ثبت، کابل، هرات، بلخ...)"
               size="md"
+              searchScope={searchScope}
             />
           </div>
 
           {/* Granular Field Search Controls with Afghan Keyboard Options */}
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-3 pt-2 border-t border-slate-200 dark:border-slate-800/80">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 pt-3 border-t border-slate-200 dark:border-slate-800/80">
+            {/* 1. Name */}
             <div>
               <div className="flex items-center justify-between mb-1">
                 <label className="text-[11px] font-medium text-slate-600 dark:text-slate-400">Name (نام)</label>
@@ -202,6 +232,7 @@ export const AdvancedSearch: React.FC<AdvancedSearchProps> = ({ onSelectRecord }
               />
             </div>
 
+            {/* 2. Father's Name */}
             <div>
               <div className="flex items-center justify-between mb-1">
                 <label className="text-[11px] font-medium text-slate-600 dark:text-slate-400">Father's Name (نام پدر)</label>
@@ -228,6 +259,7 @@ export const AdvancedSearch: React.FC<AdvancedSearchProps> = ({ onSelectRecord }
               />
             </div>
 
+            {/* 3. Grandfather's Name */}
             <div>
               <div className="flex items-center justify-between mb-1">
                 <label className="text-[11px] font-medium text-slate-600 dark:text-slate-400">Grandfather (نام پدرکلان)</label>
@@ -254,6 +286,7 @@ export const AdvancedSearch: React.FC<AdvancedSearchProps> = ({ onSelectRecord }
               />
             </div>
 
+            {/* 4. Province */}
             <div>
               <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">Province (ولایت)</label>
               <select
@@ -266,15 +299,19 @@ export const AdvancedSearch: React.FC<AdvancedSearchProps> = ({ onSelectRecord }
                 }}
                 className="w-full px-2.5 py-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-md text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-brand-500 cursor-pointer"
               >
-                <option value="">All Provinces</option>
-                {filterOptions.provinces.map((p) => (
-                  <option key={p} value={p}>
-                    {p}
-                  </option>
-                ))}
+                <option value="">All Provinces ({filterOptions.provinces.length})</option>
+                {filterOptions.provinces.map((p) => {
+                  const en = getEnglishProvinceName(p);
+                  return (
+                    <option key={p} value={p}>
+                      {en} • {p}
+                    </option>
+                  );
+                })}
               </select>
             </div>
 
+            {/* 5. District */}
             <div>
               <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">District (ولسوالی)</label>
               <select
@@ -286,17 +323,24 @@ export const AdvancedSearch: React.FC<AdvancedSearchProps> = ({ onSelectRecord }
                 }}
                 className="w-full px-2.5 py-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-md text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-brand-500 cursor-pointer"
               >
-                <option value="">All Districts</option>
-                {filterOptions.districts.map((d) => (
-                  <option key={d} value={d}>
-                    {d}
-                  </option>
-                ))}
+                <option value="">
+                  {province ? `All Districts in ${getEnglishProvinceName(province)} (${filterOptions.districts.length})` : `All Districts (${filterOptions.districts.length})`}
+                </option>
+                {filterOptions.districts.map((d) => {
+                  const en = getEnglishDistrictName(d, province);
+                  const clean = getCleanNativeName(d, province);
+                  return (
+                    <option key={d} value={d}>
+                      {en} • {clean}
+                    </option>
+                  );
+                })}
               </select>
             </div>
 
+            {/* 6. Gender */}
             <div>
-              <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">Gender</label>
+              <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">Gender (جنسیت)</label>
               <select
                 value={gender !== undefined ? gender : ''}
                 onChange={(e) => {
@@ -306,7 +350,7 @@ export const AdvancedSearch: React.FC<AdvancedSearchProps> = ({ onSelectRecord }
                 }}
                 className="w-full px-2.5 py-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-md text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-brand-500 cursor-pointer"
               >
-                <option value="">All Genders</option>
+                <option value="">All Genders (همه)</option>
                 {filterOptions.genders.map((g) => (
                   <option key={g.value} value={g.value}>
                     {g.label}
@@ -315,8 +359,11 @@ export const AdvancedSearch: React.FC<AdvancedSearchProps> = ({ onSelectRecord }
               </select>
             </div>
 
+            {/* 7. Book Name */}
             <div>
-              <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">Book Name</label>
+              <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
+                Registry Book (کتاب ثبت) ({filterOptions.books.length})
+              </label>
               <select
                 value={bookName}
                 onChange={(e) => {
@@ -326,13 +373,79 @@ export const AdvancedSearch: React.FC<AdvancedSearchProps> = ({ onSelectRecord }
                 }}
                 className="w-full px-2.5 py-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-md text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-brand-500 truncate cursor-pointer"
               >
-                <option value="">All Registry Books</option>
+                <option value="">All Registry Books ({filterOptions.books.length})</option>
                 {filterOptions.books.map((b) => (
                   <option key={b} value={b}>
                     {b}
                   </option>
                 ))}
               </select>
+            </div>
+
+            {/* 8. Birth Year Range */}
+            <div>
+              <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
+                Birth Year (سال تولد شمسی)
+              </label>
+              <div className="flex items-center space-x-1.5">
+                <input
+                  type="number"
+                  placeholder="از (1300)"
+                  value={yearMin !== undefined ? yearMin : ''}
+                  onChange={(e) => {
+                    const val = e.target.value ? Number(e.target.value) : undefined;
+                    setYearMin(val);
+                    setFiltersBatch({ dob_year_min: val });
+                  }}
+                  className="w-1/2 px-2 py-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-md text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-brand-500 font-mono text-center"
+                />
+                <span className="text-slate-400 text-xs">-</span>
+                <input
+                  type="number"
+                  placeholder="تا (1405)"
+                  value={yearMax !== undefined ? yearMax : ''}
+                  onChange={(e) => {
+                    const val = e.target.value ? Number(e.target.value) : undefined;
+                    setYearMax(val);
+                    setFiltersBatch({ dob_year_max: val });
+                  }}
+                  className="w-1/2 px-2 py-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-md text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-brand-500 font-mono text-center"
+                />
+              </div>
+            </div>
+
+            {/* 9. Record Number */}
+            <div>
+              <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
+                Record Number (شماره ثبت)
+              </label>
+              <input
+                type="number"
+                placeholder="e.g. 100"
+                value={recordNum !== undefined ? recordNum : ''}
+                onChange={(e) => {
+                  const val = e.target.value ? Number(e.target.value) : undefined;
+                  setRecordNum(val);
+                }}
+                className="w-full px-2.5 py-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-md text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-brand-500 font-mono"
+              />
+            </div>
+
+            {/* 10. Page Number */}
+            <div>
+              <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-400 mb-1">
+                Page Number (شماره صفحه)
+              </label>
+              <input
+                type="number"
+                placeholder="e.g. 10"
+                value={pageNum !== undefined ? pageNum : ''}
+                onChange={(e) => {
+                  const val = e.target.value ? Number(e.target.value) : undefined;
+                  setPageNum(val);
+                }}
+                className="w-full px-2.5 py-1.5 bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-800 rounded-md text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-brand-500 font-mono"
+              />
             </div>
           </div>
 

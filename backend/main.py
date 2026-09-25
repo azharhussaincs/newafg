@@ -109,12 +109,25 @@ BOOK_CACHE: Dict[str, Any] = {}
 PROVINCE_BOOKS_MAP: Dict[str, List[Any]] = {}
 ALL_BOOKS_LIST: List[Dict[str, Any]] = []
 ALL_BOOKS_MAP: Dict[str, Dict[str, Any]] = {}
+DIST_TO_CODE_MAP: Dict[str, str] = {}
+CODE_TO_DIST_MAP: Dict[str, str] = {}
 DOB_DIST_CACHE: List[Any] = []
 DOB_GENDER_DIST_CACHE: List[Any] = []
 
 def load_memory_caches():
-    global PROVINCE_CACHE, PROV_GENDER_CACHE, DISTRICTS_BY_PROV, DISTRICT_CACHE, DISTRICT_ONLY_CACHE, BOOK_CACHE, PROVINCE_BOOKS_MAP, DOB_DIST_CACHE, DOB_GENDER_DIST_CACHE, ALL_BOOKS_LIST, ALL_BOOKS_MAP
+    global PROVINCE_CACHE, PROV_GENDER_CACHE, DISTRICTS_BY_PROV, DISTRICT_CACHE, DISTRICT_ONLY_CACHE, BOOK_CACHE, PROVINCE_BOOKS_MAP, DOB_DIST_CACHE, DOB_GENDER_DIST_CACHE, ALL_BOOKS_LIST, ALL_BOOKS_MAP, DIST_TO_CODE_MAP, CODE_TO_DIST_MAP
     try:
+        # Load high-accuracy district code mappings
+        mapping_file = Path(__file__).resolve().parent / "data" / "district_mapping.json"
+        if mapping_file.exists():
+            try:
+                with open(mapping_file, "r", encoding="utf-8") as mf:
+                    md = json.load(mf)
+                    DIST_TO_CODE_MAP.update(md.get("dist_to_code", {}))
+                    CODE_TO_DIST_MAP.update(md.get("code_to_dist", {}))
+            except Exception as ex:
+                print("Warning: failed to load district mapping file:", ex)
+
         conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute("SELECT cache_key, cache_data FROM analytics_cache")
@@ -155,7 +168,7 @@ def load_memory_caches():
                 pass
         conn.close()
 
-        # Build comprehensive national volume catalog (all 51,834 unique books)
+        # Build comprehensive national volume catalog
         ALL_BOOKS_MAP = {}
         ALL_BOOKS_LIST = []
         if PROVINCE_BOOKS_MAP:
@@ -177,9 +190,20 @@ def load_memory_caches():
                         ALL_BOOKS_LIST.append(item)
                     else:
                         ALL_BOOKS_MAP[b_name]['records_count'] += cnt
-            ALL_BOOKS_LIST.sort(key=lambda x: x['records_count'], reverse=True)
-            for b in ALL_BOOKS_LIST:
-                BOOK_CACHE[b['book_name']] = b
+        elif BOOK_CACHE:
+            for b_name, b_info in BOOK_CACHE.items():
+                item = {
+                    'book_name': b_name,
+                    'province': b_info.get('province', ''),
+                    'records_count': b_info.get('records_count', 0),
+                    'unique_pages': b_info.get('unique_pages', 1),
+                    'percentage': b_info.get('percentage', 0.0)
+                }
+                ALL_BOOKS_MAP[b_name] = item
+                ALL_BOOKS_LIST.append(item)
+        ALL_BOOKS_LIST.sort(key=lambda x: x['records_count'], reverse=True)
+        for b in ALL_BOOKS_LIST:
+            BOOK_CACHE[b['book_name']] = b
 
     except Exception as e:
         print("Warning: could not load memory cache:", e)
@@ -297,10 +321,22 @@ def build_filter_clause(
         conditions.append("province = ?")
         params.append(province)
     if district:
-        conditions.append("district = ?")
-        params.append(district)
+        code = None
+        if province:
+            code = DIST_TO_CODE_MAP.get(f"{province}@@@{district}")
+        if not code:
+            code = DIST_TO_CODE_MAP.get(district)
+        if code:
+            conditions.append("(district = ? OR district_code = ?)")
+            params.extend([district, code])
+        else:
+            conditions.append("district = ?")
+            params.append(district)
     if gender is not None:
-        conditions.append("gender = ?")
+        if province or name or fname or gname or book_name or record_number or page_number or district:
+            conditions.append("+gender = ?")
+        else:
+            conditions.append("gender = ?")
         params.append(gender)
     if dob_year_min is not None:
         conditions.append("dob_year >= ?")
@@ -1371,24 +1407,12 @@ def get_records(
             gname=gname, hash_key=hash_key, q=q, search_fields=search_fields
         )
 
-        if not where_clause:
-            total_records = 31164973
-        elif province and not any([district, gender is not None, dob_year_min is not None, dob_year_max is not None, book_name, province_code, district_code, record_number, page_number, name, fname, gname, hash_key, q]):
-            total_records = PROVINCE_CACHE.get(province, {}).get("count", 31164973)
-        elif district and not any([gender is not None, dob_year_min is not None, dob_year_max is not None, book_name, province_code, district_code, record_number, page_number, name, fname, gname, hash_key, q]):
-            d_info = DISTRICT_CACHE.get((province or '', district)) or DISTRICT_ONLY_CACHE.get(district)
-            total_records = d_info.get("count", 1000) if d_info else 1000
-        elif book_name and not any([province, district, gender is not None, dob_year_min is not None, dob_year_max is not None, province_code, district_code, record_number, page_number, name, fname, gname, hash_key, q]):
-            total_records = BOOK_CACHE.get(book_name, {}).get("records_count", 1000)
-        else:
-            cursor.execute(f"SELECT COUNT(*) FROM records {where_clause}", params)
-            cnt_row = cursor.fetchone()
-            total_records = cnt_row[0] if cnt_row else 0
-
         order_clause = f"ORDER BY {sort_by} {sort_order_clean}"
         if sort_by == "id" and sort_order_clean == "ASC" and where_clause:
             order_clause = ""
 
+        # Optimized execution: fetch records first (page_size + 1)
+        fetch_limit = page_size + 1
         query = f"""
         SELECT id, integer_key, hash_key, name, fname, gname,
                dob_year, gender, province, district, province_code,
@@ -1397,8 +1421,34 @@ def get_records(
         {order_clause}
         LIMIT ? OFFSET ?
         """
-        cursor.execute(query, params + [page_size, offset])
-        rows = cursor.fetchall()
+        cursor.execute(query, params + [fetch_limit, offset])
+        fetched_rows = cursor.fetchall()
+
+        if len(fetched_rows) <= page_size and offset == 0:
+            total_records = len(fetched_rows)
+            rows = fetched_rows
+        else:
+            rows = fetched_rows[:page_size]
+            if not where_clause:
+                total_records = 31164973
+            elif province and gender is not None and not any([district, dob_year_min is not None, dob_year_max is not None, book_name, province_code, district_code, record_number, page_number, name, fname, gname, hash_key, q]):
+                total_records = PROV_GENDER_CACHE.get(province, {}).get(str(gender)) or PROVINCE_CACHE.get(province, {}).get("count", 1000)
+            elif province and not any([district, gender is not None, dob_year_min is not None, dob_year_max is not None, book_name, province_code, district_code, record_number, page_number, name, fname, gname, hash_key, q]):
+                total_records = PROVINCE_CACHE.get(province, {}).get("count", 31164973)
+            elif district and not any([gender is not None, dob_year_min is not None, dob_year_max is not None, book_name, province_code, district_code, record_number, page_number, name, fname, gname, hash_key, q]):
+                d_info = DISTRICT_CACHE.get((province or '', district)) or DISTRICT_ONLY_CACHE.get(district)
+                total_records = d_info.get("count", 1000) if d_info else 1000
+            elif book_name and not any([province, district, gender is not None, dob_year_min is not None, dob_year_max is not None, province_code, district_code, record_number, page_number, name, fname, gname, hash_key, q]):
+                total_records = BOOK_CACHE.get(book_name, {}).get("records_count", 1000)
+            else:
+                try:
+                    cursor.execute(f"SELECT COUNT(*) FROM (SELECT 1 FROM records {where_clause} LIMIT 10001)", params)
+                    cnt_row = cursor.fetchone()
+                    total_records = cnt_row[0] if cnt_row else len(rows)
+                    if total_records == 10001:
+                        total_records = 10000
+                except Exception:
+                    total_records = offset + len(rows)
         conn.close()
 
     records = [
@@ -1412,7 +1462,7 @@ def get_records(
             dob_year=r[6],
             gender=r[7],
             province=r[8],
-            district=r[9],
+            district=r[9] or (CODE_TO_DIST_MAP.get(f"{r[8]}@@@{r[11]}") if r[8] and r[11] else None),
             province_code=r[10],
             district_code=r[11],
             record_number=r[12],
