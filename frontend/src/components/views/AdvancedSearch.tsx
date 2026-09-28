@@ -122,11 +122,35 @@ export const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
       const activeYearMax = overrideFilters && 'dob_year_max' in overrideFilters ? overrideFilters.dob_year_max : (yearMax !== undefined ? yearMax : filters.dob_year_max);
       const activeBookName = overrideFilters && 'book_name' in overrideFilters ? overrideFilters.book_name : (bookName || filters.book_name || undefined);
 
+      // Apply the header's checked search columns to its shared query on this page too.
+      // The standalone name/father/grandfather inputs below remain independent filters.
+      let scopedQ = activeQ;
+      let scopedName: string | undefined;
+      let scopedFname: string | undefined;
+      let scopedGname: string | undefined;
+      let scopedSearchFields: string | undefined;
+      if (activeQ) {
+        const activeFields = [
+          ...(searchScope.name ? ['name'] : []),
+          ...(searchScope.fname ? ['fname'] : []),
+          ...(searchScope.gname ? ['gname'] : [])
+        ];
+        if (activeFields.length === 1) {
+          scopedQ = undefined;
+          if (activeFields[0] === 'name') scopedName = activeQ;
+          if (activeFields[0] === 'fname') scopedFname = activeQ;
+          if (activeFields[0] === 'gname') scopedGname = activeQ;
+        } else if (activeFields.length > 1) {
+          scopedSearchFields = activeFields.join(',');
+        }
+      }
+
       const data = await api.getRecords({
-        q: activeQ,
-        name: name.trim() || undefined,
-        fname: fname.trim() || undefined,
-        gname: gname.trim() || undefined,
+        q: scopedQ,
+        name: name.trim() || scopedName,
+        fname: fname.trim() || scopedFname,
+        gname: gname.trim() || scopedGname,
+        search_fields: scopedSearchFields,
         province: activeProvince,
         district: activeDistrict,
         gender: activeGender,
@@ -187,6 +211,7 @@ export const AdvancedSearch: React.FC<AdvancedSearchProps> = ({
     }
   }, [
     filters.search_query,
+    JSON.stringify(searchScope),
     filters.province,
     filters.district,
     filters.gender,

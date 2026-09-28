@@ -83,8 +83,7 @@ export const SearchWithAfghanKeyboard: React.FC<SearchWithAfghanKeyboardProps> =
 
       const scope = searchScope || { name: false, fname: false, gname: false };
       const anyChecked = scope.name || scope.fname || scope.gname;
-      const allChecked = scope.name && scope.fname && scope.gname;
-      const isTargeted = anyChecked && !allChecked;
+      const isTargeted = anyChecked;
 
       const activeFields: string[] = [];
       if (scope.name) activeFields.push('name');
@@ -139,35 +138,36 @@ export const SearchWithAfghanKeyboard: React.FC<SearchWithAfghanKeyboardProps> =
         if (Array.isArray(dbMatches)) {
           // Distinct names completion
           for (const item of dbMatches) {
-            let targetNameVal = (item.name || '').trim();
-            let label = 'نام شخص (Citizen Name Completion)';
-            let cat = 'اسامی اشخاص (Citizen Names)';
+            const completionFields = isTargeted
+              ? activeFields.map(field => ({
+                  value: ((item as any)[field] || '').trim(),
+                  label: field === 'name' ? 'نام شخص (Citizen Name)' : field === 'fname' ? "نام پدر / ولد (Father's Name)" : "نام پدرکلان (Grandfather's Name)",
+                  category: field === 'name' ? 'اسامی اشخاص (Citizen Names)' : field === 'fname' ? 'نام پدر (Father Names)' : 'نام پدرکلان (Grandfather Names)'
+                }))
+              : [{
+                  value: (item.name || '').trim(),
+                  label: 'نام شخص (Citizen Name Completion)',
+                  category: 'اسامی اشخاص (Citizen Names)'
+                }];
 
-            if (scope.fname && !scope.name && !scope.gname) {
-              targetNameVal = (item.fname || '').trim();
-              label = "نام پدر / ولد (Father's Name)";
-              cat = 'نام پدر (Father Names)';
-            } else if (scope.gname && !scope.name && !scope.fname) {
-              targetNameVal = (item.gname || '').trim();
-              label = "نام پدرکلان (Grandfather's Name)";
-              cat = 'نام پدرکلان (Grandfather Names)';
-            }
-
-            if (targetNameVal && !seen.has(`name-${targetNameVal}`)) {
-              seen.add(`name-${targetNameVal}`);
-              results.push({
-                type: 'name',
-                title: targetNameVal,
-                subtitle: label,
-                value: targetNameVal,
-                category: cat
-              });
+            for (const completion of completionFields) {
+              const targetNameVal = completion.value;
+              if (targetNameVal && !seen.has(`name-${targetNameVal}`)) {
+                seen.add(`name-${targetNameVal}`);
+                results.push({
+                  type: 'name',
+                  title: targetNameVal,
+                  subtitle: completion.label,
+                  value: targetNameVal,
+                  category: completion.category
+                });
+              }
             }
             if (results.filter(r => r.type === 'name').length >= 3) break;
           }
 
           // Citizen Records with 3-generation lineage
-          for (const item of dbMatches) {
+          for (const item of (isTargeted ? [] : dbMatches)) {
             const name = (item.name || '').trim();
             const fname = (item.fname || '').trim();
             const gname = (item.gname || '').trim();

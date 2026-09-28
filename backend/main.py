@@ -380,11 +380,11 @@ def build_filter_clause(
 
     if q:
         q_clean = q.strip()
-        if q_clean.isdigit():
+        if q_clean.isdigit() and not search_fields:
             val = int(q_clean)
             conditions.append("(id = ? OR integer_key = ? OR dob_year = ?)")
             params.extend([val, val, val])
-        elif len(q_clean) == 32 and all(c in '0123456789abcdefABCDEF' for c in q_clean):
+        elif not search_fields and len(q_clean) == 32 and all(c in '0123456789abcdefABCDEF' for c in q_clean):
             conditions.append("hash_key = ?")
             params.append(q_clean.upper())
         else:
@@ -401,8 +401,9 @@ def build_filter_clause(
                 field_conds.append("(gname >= ? AND gname < ?)")
                 params.extend([p_start, p_end])
 
-            # Only check geographic matching if user hasn't restricted to specific name fields (i.e. all 3 active / no checkbox)
-            if not search_fields or set(fields) == {'name', 'fname', 'gname'}:
+            # Geographic matching is part of universal search only. Any explicit field
+            # selection (including all three name fields) stays within those fields.
+            if not search_fields:
                 q_lower = q_clean.lower()
                 dari_geo = ENGLISH_TO_DARI_GEO.get(q_lower)
                 if dari_geo:
@@ -1328,7 +1329,7 @@ def get_records(
     if q and not any([province, district, gender, dob_year_min, dob_year_max, book_name, province_code, district_code, record_number, page_number, name, fname, gname, hash_key]):
         q_clean = q.strip()
         fields = parse_search_fields(search_fields)
-        is_targeted = bool(search_fields and set(fields) != {'name', 'fname', 'gname'})
+        is_targeted = bool(search_fields)
 
         if q_clean.isdigit() and not is_targeted:
             val = int(q_clean)
@@ -1506,7 +1507,7 @@ def export_records(
         q_clean = q.strip()
         q_lower = q_clean.lower()
         fields = parse_search_fields(search_fields)
-        is_targeted = bool(search_fields and set(fields) != {'name', 'fname', 'gname'})
+        is_targeted = bool(search_fields)
 
         if q_clean.isdigit() and not is_targeted:
             num_val = int(q_clean)
@@ -2002,7 +2003,7 @@ def get_search_suggestions(
     suggestions = []
     seen_values = set()
     fields = parse_search_fields(search_fields)
-    is_targeted = bool(search_fields and set(fields) != {'name', 'fname', 'gname'})
+    is_targeted = bool(search_fields)
 
     # 1. Geographic matches (Only when searching across all fields, not when targeting specific name/father/grandfather fields)
     if not is_targeted:
@@ -2191,7 +2192,7 @@ def search_family_persons(
     cursor = conn.cursor()
     q_clean = q.strip()
     
-    if q_clean.isdigit():
+    if q_clean.isdigit() and not search_fields:
         val = int(q_clean)
         cursor.execute("""
         SELECT id, name, fname, gname, dob_year, gender, province, district, book_name, page_number, record_number

@@ -127,7 +127,6 @@ export const FilterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const toQueryParams = (): QueryParams => {
     const scope = searchScope || { name: false, fname: false, gname: false };
     const anyChecked = scope.name || scope.fname || scope.gname;
-    const allChecked = scope.name && scope.fname && scope.gname;
 
     let targetName: string | undefined = undefined;
     let targetFname: string | undefined = undefined;
@@ -136,8 +135,8 @@ export const FilterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     let targetSearchFields: string | undefined = undefined;
 
     if (filters.search_query) {
-      if (!anyChecked || allChecked) {
-        // Search from all 3 columns
+      if (!anyChecked) {
+        // With no selected fields, retain universal search behavior.
         targetQ = filters.search_query;
       } else if (scope.name && !scope.fname && !scope.gname) {
         // Search Name only
@@ -149,7 +148,7 @@ export const FilterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         // Search Grandfather only
         targetGname = filters.search_query;
       } else {
-        // Multi-field combinations (e.g. name + fname)
+        // Restrict searches to the selected name fields, including when all three are selected.
         targetQ = filters.search_query;
         const activeFields: string[] = [];
         if (scope.name) activeFields.push('name');
